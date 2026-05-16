@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_MusicToy
+  m_EditorClassIdentifier: 
+  id: music_toy
+  displayName: 发条音乐玩具
+  itemType: 发条玩具
+  damageLevel: 齿轮卡住
+  customer: {fileID: 11400000, guid: 2982773a6fa5b2c57b96b162854e6926, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+    amount: 2
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  energyCost: 3
+  rewardCoins: 14
+  customerNote: 它不必唱准，只要能转起来就很好。
+  feedbackText: 收藏家听见断断续续的旋律，反而笑了。

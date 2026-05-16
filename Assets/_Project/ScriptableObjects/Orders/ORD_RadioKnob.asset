@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_RadioKnob
+  m_EditorClassIdentifier: 
+  id: radio_knob
+  displayName: 收音机旋钮
+  itemType: ???
+  damageLevel: 旋钮缺失
+  customer: {fileID: 11400000, guid: a1bb1c5c324d7fa4d4eccd9a972010eb, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  energyCost: 2
+  rewardCoins: 12
+  customerNote: 外观可以不一样，但手感要顺。
+  feedbackText: 学生拧了两圈，说声音像从房间角落回来。

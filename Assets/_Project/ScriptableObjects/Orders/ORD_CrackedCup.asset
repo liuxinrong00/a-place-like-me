@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_CrackedCup
+  m_EditorClassIdentifier: 
+  id: cracked_cup
+  displayName: 裂纹茶杯
+  itemType: ???
+  damageLevel: 杯口细裂
+  customer: {fileID: 11400000, guid: 978395341244b7470d4ff3e14a1eb880, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 1
+  energyCost: 2
+  rewardCoins: 8
+  customerNote: 它每天早上都陪我喝茶，能再用就好。
+  feedbackText: 邻居说，杯子还是熟悉的重量。

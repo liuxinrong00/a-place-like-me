@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4661830ecbd25a88702c71e1eaad5ff, type: 3}
+  m_Name: RM_PreserveTrace
+  m_EditorClassIdentifier: 
+  id: preserve_trace
+  displayName: 保留痕迹
+  repairMethodType: 1
+  energyModifier: 0
+  coinRewardModifier: 0
+  authenticityModifier: 2
+  description: 修好关键损坏，但留下岁月痕迹。温柔、稳妥，也更像这家小店。

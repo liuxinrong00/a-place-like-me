@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_AntiqueBox
+  m_EditorClassIdentifier: 
+  id: antique_box
+  displayName: 老木盒子
+  itemType: ???
+  damageLevel: 边角开裂
+  customer: {fileID: 11400000, guid: 2982773a6fa5b2c57b96b162854e6926, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 2
+  energyCost: 3
+  rewardCoins: 13
+  customerNote: 爷爷留下的盒子，别让它看起来太新。
+  feedbackText: 收藏家点点头，说旧痕迹还在，像是松了一口气。

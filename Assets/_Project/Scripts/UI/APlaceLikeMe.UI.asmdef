@@ -1,0 +1,20 @@
+{
+    "name": "APlaceLikeMe.UI",
+    "rootNamespace": "APlaceLikeMe.UI",
+    "references": [
+        "APlaceLikeMe.Core",
+        "APlaceLikeMe.Data",
+        "APlaceLikeMe.Gameplay",
+        "APlaceLikeMe.Flow",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

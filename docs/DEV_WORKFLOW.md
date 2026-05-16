@@ -7,10 +7,12 @@
 - 业务资产统一放入 `Assets/_Project/`。
 - 不在 `Assets/Scenes/SampleScene.unity` 上继续做正式内容。
 - 不为临时功能破坏脚本分层。
+- 文档、脚本和 Unity 文本资产统一使用 UTF-8 编码。
 
 ## 2. Git 流程
 
 - 每次改动前先确认 `git status`。
+- 写入中文内容时使用支持 UTF-8 的编辑器或脚本，避免 PowerShell 默认编码造成乱码。
 - 提交信息使用简短英文前缀，例如：
   - `docs: update roadmap`
   - `chore: add project folders`

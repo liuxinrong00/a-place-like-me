@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_TornScarf
+  m_EditorClassIdentifier: 
+  id: torn_scarf
+  displayName: 撕裂围巾
+  itemType: ??
+  damageLevel: 边缘撕裂
+  customer: {fileID: 11400000, guid: 978395341244b7470d4ff3e14a1eb880, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+    amount: 2
+  energyCost: 1
+  rewardCoins: 6
+  customerNote: 颜色不用完全一样，暖和就好。
+  feedbackText: 邻居把围巾围上，说刚刚好。

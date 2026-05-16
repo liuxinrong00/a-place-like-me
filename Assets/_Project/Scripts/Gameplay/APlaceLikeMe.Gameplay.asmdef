@@ -1,0 +1,17 @@
+{
+    "name": "APlaceLikeMe.Gameplay",
+    "rootNamespace": "APlaceLikeMe.Gameplay",
+    "references": [
+        "APlaceLikeMe.Core",
+        "APlaceLikeMe.Data"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

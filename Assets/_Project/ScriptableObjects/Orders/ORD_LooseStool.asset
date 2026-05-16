@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_LooseStool
+  m_EditorClassIdentifier: 
+  id: loose_stool
+  displayName: 松动矮凳
+  itemType: ??
+  damageLevel: 凳腿松动
+  customer: {fileID: 11400000, guid: 978395341244b7470d4ff3e14a1eb880, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  energyCost: 2
+  rewardCoins: 9
+  customerNote: 店门口那只猫也爱坐这个凳子。
+  feedbackText: 邻居笑着说，猫会第一个验收。

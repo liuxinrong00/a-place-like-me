@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_FadedFrame
+  m_EditorClassIdentifier: 
+  id: faded_frame
+  displayName: 褪色相框
+  itemType: ??
+  damageLevel: 漆面脱落
+  customer: {fileID: 11400000, guid: 2982773a6fa5b2c57b96b162854e6926, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 2
+  - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+    amount: 1
+  energyCost: 2
+  rewardCoins: 11
+  customerNote: 照片不能换，相框可以慢慢补。
+  feedbackText: 收藏家说，相框看起来像被认真照顾过。

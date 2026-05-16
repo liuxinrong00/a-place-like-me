@@ -62,6 +62,16 @@ Assets/
 - `Save`：存档结构与读写入口，MVP 可先预留。
 - `Utils`：项目级工具方法，避免放业务逻辑。
 
+当前已为各脚本目录建立 asmdef：
+
+- `APlaceLikeMe.Core`：无项目依赖。
+- `APlaceLikeMe.Data`：依赖 `Core`。
+- `APlaceLikeMe.Gameplay`：依赖 `Core`、`Data`。
+- `APlaceLikeMe.Flow`：依赖 `Core`、`Data`、`Gameplay`。
+- `APlaceLikeMe.UI`：依赖 `Core`、`Data`、`Gameplay`、`Flow`、`UnityEngine.UI`。
+- `APlaceLikeMe.Save`：依赖 `Core`、`Data`、`Gameplay`。
+- `APlaceLikeMe.Utils`：依赖 `Core`。
+
 ## 4. 数据配置
 
 早期数据使用 ScriptableObject 管理，便于在 Inspector 中调试。
@@ -95,6 +105,8 @@ Assets/
 
 MVP 前先实现空流程入口：启动场景后进入 `Boot`，再切换到 `DayStart`。后续再逐步接入订单、修补和结算逻辑。
 
+当前原型在 `S_Bootstrap.unity` 中挂载 `GameBootstrap` 与 `PrototypeGameController`。`GameBootstrap` 负责基础阶段启动；`PrototypeGameController` 读取 `PrototypeGameConfig`，创建程序化 uGUI，并驱动 3 天订单闭环。
+
 ## 6. UI 架构
 
 MVP UI 使用 uGUI，优先保证信息清楚，不追求最终美术。
@@ -104,11 +116,15 @@ MVP UI 使用 uGUI，优先保证信息清楚，不追求最终美术。
 - `ResourceBarView`：金币、能量、真实度、材料摘要。
 - `OrderListView`：当天订单列表。
 - `OrderDetailView`：订单详情和顾客备注。
-- `RepairActionView`：修补按钮和失败提示。
+- `RepairActionView`：修补方式选择、修补按钮和失败提示。
 - `NightSummaryView`：当日收入、能量、材料、反馈摘要。
 - `MaterialPurchaseView`：简化材料购买入口。
 
 UI 层只负责显示和转发玩家输入，不直接计算订单结果。
+
+当前原型 UI 由代码生成，采用“主空间场景 + 独立交互 UI 场景”结构。`S_Bootstrap.unity` 负责店铺/卧室平面、可移动玩家小人、门、公告栏、床、收银台和货架；`S_OrderBoardUI.unity` 负责订单列表、订单详情、修补方式、修补预览、夜晚补货、流程按钮和反馈文本。公告栏交互后 additive 加载订单 UI 场景；门进入卧室；床 additive 加载结算 UI 场景，并可进入下一天。该实现用于验证流程和空间交互，后续可替换为正式 Prefab。
+
+视觉基线见 `docs/UI_STYLE.md`：参考 shadcn/ui 的清晰卡片和按钮层级、Fluent 的可读状态反馈，并结合黄色破旧小店氛围。
 
 ## 7. 命名规范
 
