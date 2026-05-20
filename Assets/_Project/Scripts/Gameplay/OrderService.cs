@@ -80,7 +80,7 @@ namespace APlaceLikeMe.Gameplay
             }
 
             state.AddMaterial(material, amount);
-            return new OrderResult(true, $"夜晚补货：{material.DisplayName} +{amount}，金币 -{cost}");
+            return new OrderResult(true, $"夜晚补货：{material.DisplayName} +{amount}，花费 {cost} 金币");
         }
 
         public int GetFinalEnergyCost(OrderDefinition order, RepairMethodDefinition repairMethod)

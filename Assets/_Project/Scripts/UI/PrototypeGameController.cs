@@ -17,7 +17,8 @@ namespace APlaceLikeMe.UI
             None,
             Door,
             BulletinBoard,
-            Bed
+            Bed,
+            Table
         }
 
         private enum RoomMode
@@ -36,6 +37,7 @@ namespace APlaceLikeMe.UI
         private readonly Rect bulletinInteractionZone = new(0.0f, 0.0f, 0.16f, 0.16f);
         private readonly Rect bedroomDoorInteractionZone = new(0.48f, 0.0f, 0.2f, 0.16f);
         private readonly Rect bedInteractionZone = new(0.0f, 0.42f, 0.22f, 0.48f);
+        private readonly Rect tableInteractionZone = new(0.40f, 0.74f, 0.28f, 0.22f);
 
         [SerializeField] private PrototypeGameConfig config;
 
@@ -43,6 +45,7 @@ namespace APlaceLikeMe.UI
         private Vector2 playerPosition = new(0.48f, 0.24f);
         private PrototypeInteractionPanelMode pendingPanelMode = PrototypeInteractionPanelMode.Orders;
         private bool isInteractionSceneLoaded;
+        private bool suppressNextInteractInput;
         private bool roomVisualsDirty = true;
         private Text titleText;
         private Text resourceText;
@@ -52,6 +55,10 @@ namespace APlaceLikeMe.UI
         private RectTransform shopFloorRoot;
         private RectTransform roomObjectsRoot;
         private RectTransform playerMarker;
+        private RectTransform confirmationOverlay;
+        private Text confirmationText;
+        private System.Action confirmationYesAction;
+        private System.Action confirmationNoAction;
 
         public static PrototypeGameController Active { get; private set; }
         public GameSessionState State => state;
@@ -85,10 +92,25 @@ namespace APlaceLikeMe.UI
                 return;
             }
 
+            if (IsConfirmationOpen())
+            {
+                return;
+            }
+
             HandlePlayerMovement();
             if (Input.GetKeyDown(KeyCode.E))
             {
+                if (suppressNextInteractInput)
+                {
+                    suppressNextInteractInput = false;
+                    return;
+                }
+
                 TryInteract();
+            }
+            else if (Input.GetKeyUp(KeyCode.E))
+            {
+                suppressNextInteractInput = false;
             }
         }
 
@@ -112,7 +134,7 @@ namespace APlaceLikeMe.UI
         {
             var todayCompletedCount = state.CompletedOrders.Count(order => order.DayCompleted == state.CurrentDay);
             var feedback = state.FeedbackLog.Count == 0 ? "今天还没有顾客反馈。" : string.Join("\n", state.FeedbackLog);
-            return $"夜晚结算\n完成订单：{todayCompletedCount}\n当日收入：{state.TodayIncome}\n真实度变化：{FormatSigned(state.TodayAuthenticityDelta)}\n顾客反馈：\n{feedback}\n\n可以用金币补一点材料，再进入下一天。";
+            return $"夜晚结算\n完成订单：{todayCompletedCount}\n当日收入：{state.TodayIncome}\n真实度变化：{FormatSigned(state.TodayAuthenticityDelta)}\n顾客反馈：\n{feedback}\n\n当前材料：\n{FormatMaterials()}\n\n可以用金币补一点材料。";
         }
 
         public OrderResult TryCompleteOrderFromPanel(OrderDefinition order, RepairMethodDefinition repairMethod)
@@ -122,9 +144,10 @@ namespace APlaceLikeMe.UI
             return result;
         }
 
-        public OrderResult TryBuySupplyFromPanel(MaterialDefinition material)
+        public OrderResult TryBuySupplyFromPanel(MaterialDefinition material, int purchaseCount)
         {
-            var result = orderService.TryBuyNightSupply(state, material, config.NightSupplyCost, config.NightSupplyAmount);
+            var clampedCount = Mathf.Clamp(purchaseCount, 1, 10);
+            var result = orderService.TryBuyNightSupply(state, material, clampedCount, clampedCount);
             Render();
             return result;
         }
@@ -136,6 +159,7 @@ namespace APlaceLikeMe.UI
 
         public void CloseInteractionSceneFromPanel()
         {
+            suppressNextInteractInput = true;
             UnloadInteractionSceneIfLoaded();
             Render();
         }
@@ -149,7 +173,7 @@ namespace APlaceLikeMe.UI
             playerPosition = new Vector2(0.48f, 0.24f);
             roomVisualsDirty = true;
             UnloadInteractionSceneIfLoaded();
-            feedbackText.text = $"第 {state.CurrentDay} 天开店。去公告栏查看订单，或者走到门口进入卧室。";
+            feedbackText.text = $"第 {state.CurrentDay} 天开店。去公告栏查看订单，晚上可以在卧室桌子补货。";
             Render();
         }
 
@@ -158,33 +182,87 @@ namespace APlaceLikeMe.UI
             switch (GetCurrentInteractionTarget())
             {
                 case InteractionTarget.Door:
-                    ToggleRoom();
+                    TryUseDoor();
                     break;
                 case InteractionTarget.BulletinBoard:
                     OpenInteractionScene(PrototypeInteractionPanelMode.Orders);
                     break;
                 case InteractionTarget.Bed:
-                    if (state.Phase == GamePhase.OrderSelection)
+                    if (state.Phase == GamePhase.NightSummary)
                     {
-                        state.SetPhase(GamePhase.NightSummary);
-                        OpenInteractionScene(PrototypeInteractionPanelMode.NightSummary);
-                    }
-                    else if (state.Phase == GamePhase.NightSummary)
-                    {
-                        GoNextDay();
+                        ShowConfirmation(
+                            "是否睡到明天？",
+                            "是",
+                            "否",
+                            GoNextDay,
+                            () =>
+                            {
+                                feedbackText.text = "你还留在卧室。可以先去桌子补货。";
+                                Render();
+                            });
                     }
                     else
                     {
-                        feedbackText.text = "床铺整理好了，小店今天已经打烊。";
+                        feedbackText.text = "现在还没到夜晚。先从店铺的门进入黑夜。";
+                        Render();
+                    }
+
+                    break;
+                case InteractionTarget.Table:
+                    if (state.Phase == GamePhase.NightSummary)
+                    {
+                        OpenInteractionScene(PrototypeInteractionPanelMode.NightSummary);
+                    }
+                    else
+                    {
+                        feedbackText.text = "桌子留给夜晚补货。现在是早上，先从门回店铺。";
                         Render();
                     }
 
                     break;
                 default:
-                    feedbackText.text = currentRoom == RoomMode.Shop ? "靠近门或公告栏后按 E 互动。" : "靠近床或门后按 E 互动。";
+                    feedbackText.text = currentRoom == RoomMode.Shop ? "靠近门或公告栏后按 E 互动。" : "靠近床、桌子或门后按 E 互动。";
                     Render();
                     break;
             }
+        }
+
+        private void TryUseDoor()
+        {
+            if (currentRoom == RoomMode.Shop)
+            {
+                ShowConfirmation(
+                    "是否跳到黑夜并进入卧室？",
+                    "是",
+                    "否",
+                    EnterNightBedroom,
+                    () =>
+                    {
+                        feedbackText.text = "你留在店里。还可以继续处理订单。";
+                        Render();
+                    });
+                return;
+            }
+
+            if (state.Phase == GamePhase.NightSummary)
+            {
+                feedbackText.text = "已经是夜晚了。等睡到第二天早上再回店铺。";
+                Render();
+                return;
+            }
+
+            ToggleRoom();
+        }
+
+        private void EnterNightBedroom()
+        {
+            state.SetPhase(GamePhase.NightSummary);
+            currentRoom = RoomMode.Bedroom;
+            playerPosition = new Vector2(0.58f, 0.16f);
+            roomVisualsDirty = true;
+            UnloadInteractionSceneIfLoaded();
+            feedbackText.text = "夜晚到了。桌子可以补货，床可以睡到明天。";
+            Render();
         }
 
         private void ToggleRoom()
@@ -193,7 +271,7 @@ namespace APlaceLikeMe.UI
             playerPosition = currentRoom == RoomMode.Shop ? new Vector2(0.84f, 0.82f) : new Vector2(0.58f, 0.16f);
             roomVisualsDirty = true;
             UnloadInteractionSceneIfLoaded();
-            feedbackText.text = currentRoom == RoomMode.Shop ? "你回到了店铺。" : "你进入了卧室。床可以用于结束当天。";
+            feedbackText.text = currentRoom == RoomMode.Shop ? "你回到了店铺。" : "你进入了卧室。床用于睡到明天，桌子用于夜晚补货。";
             Render();
         }
 
@@ -210,11 +288,11 @@ namespace APlaceLikeMe.UI
 
             var orders = orderService.GetOrdersForDay(config.OrderPool, state.CurrentDay + 1, config.OrdersPerDay);
             state.StartNextDay(orders);
-            currentRoom = RoomMode.Shop;
-            playerPosition = new Vector2(0.84f, 0.82f);
+            currentRoom = RoomMode.Bedroom;
+            playerPosition = new Vector2(0.13f, 0.48f);
             roomVisualsDirty = true;
             UnloadInteractionSceneIfLoaded();
-            feedbackText.text = $"第 {state.CurrentDay} 天开店。能量已恢复，小店又亮起一盏旧灯。";
+            feedbackText.text = $"第 {state.CurrentDay} 天早上。能量已恢复，走到门边按 E 回店铺。";
             Render();
         }
 
@@ -243,6 +321,50 @@ namespace APlaceLikeMe.UI
             {
                 SceneManager.UnloadSceneAsync(scene);
             }
+        }
+
+        private void ShowConfirmation(string message, string yesLabel, string noLabel, System.Action onYes, System.Action onNo)
+        {
+            confirmationYesAction = onYes;
+            confirmationNoAction = onNo;
+            confirmationText.text = message;
+
+            var buttonsRoot = confirmationOverlay.Find("Dialog/Buttons");
+            for (var index = buttonsRoot.childCount - 1; index >= 0; index--)
+            {
+                Destroy(buttonsRoot.GetChild(index).gameObject);
+            }
+
+            CreateButton(buttonsRoot, yesLabel, ConfirmYes, true);
+            CreateButton(buttonsRoot, noLabel, ConfirmNo);
+            confirmationOverlay.gameObject.SetActive(true);
+        }
+
+        private bool IsConfirmationOpen()
+        {
+            return confirmationOverlay != null && confirmationOverlay.gameObject.activeSelf;
+        }
+
+        private void ConfirmYes()
+        {
+            var action = confirmationYesAction;
+            HideConfirmation();
+            action?.Invoke();
+        }
+
+        private void ConfirmNo()
+        {
+            var action = confirmationNoAction;
+            HideConfirmation();
+            action?.Invoke();
+        }
+
+        private void HideConfirmation()
+        {
+            confirmationOverlay.gameObject.SetActive(false);
+            confirmationYesAction = null;
+            confirmationNoAction = null;
+            suppressNextInteractInput = true;
         }
 
         private void Render()
@@ -321,6 +443,11 @@ namespace APlaceLikeMe.UI
                 {
                     return InteractionTarget.Bed;
                 }
+
+                if (tableInteractionZone.Contains(playerPosition))
+                {
+                    return InteractionTarget.Table;
+                }
             }
 
             return InteractionTarget.None;
@@ -335,13 +462,15 @@ namespace APlaceLikeMe.UI
 
             interactionHintText.text = GetCurrentInteractionTarget() switch
             {
-                InteractionTarget.Door when currentRoom == RoomMode.Shop => "按 E：进入卧室",
+                InteractionTarget.Door when currentRoom == RoomMode.Shop => "按 E：询问是否进入黑夜",
+                InteractionTarget.Door when currentRoom == RoomMode.Bedroom && state.Phase == GamePhase.NightSummary => "夜晚不能回店铺，先睡到明天",
                 InteractionTarget.Door when currentRoom == RoomMode.Bedroom => "按 E：回到店铺",
-                InteractionTarget.Bed when state.Phase == GamePhase.OrderSelection => "按 E：在床上结束当天并结算",
-                InteractionTarget.Bed when state.Phase == GamePhase.NightSummary => "按 E：睡到下一天",
-                InteractionTarget.Bed => "床：今天已经结算过了",
+                InteractionTarget.Bed when state.Phase == GamePhase.NightSummary => "按 E：询问是否睡到明天",
+                InteractionTarget.Bed => "床：夜晚才能睡到明天",
+                InteractionTarget.Table when state.Phase == GamePhase.NightSummary => "按 E：在桌子补货",
+                InteractionTarget.Table => "桌子：夜晚可补货",
                 InteractionTarget.BulletinBoard => "按 E：打开订单场景",
-                _ => currentRoom == RoomMode.Shop ? "WASD / 方向键移动，靠近门或公告栏按 E 互动" : "WASD / 方向键移动，靠近床或门按 E 互动"
+                _ => currentRoom == RoomMode.Shop ? "WASD / 方向键移动，靠近门或公告栏按 E 互动" : "WASD / 方向键移动，靠近床、桌子或门按 E 互动"
             };
         }
 
@@ -381,23 +510,23 @@ namespace APlaceLikeMe.UI
 
         private static void BuildShopRoomObjects(Transform parent)
         {
-            CreateRoomObject(parent, "收银台", new Vector2(0.03f, 0.68f), new Vector2(0.26f, 0.86f), PrototypeUiTheme.Card);
-            CreateRoomObject(parent, "货架", new Vector2(0.39f, 0.48f), new Vector2(0.62f, 0.86f), PrototypeUiTheme.PaperMuted);
-            CreateRoomObject(parent, "货架", new Vector2(0.75f, 0.48f), new Vector2(0.98f, 0.86f), PrototypeUiTheme.PaperMuted);
-            CreateRoomObject(parent, "货架", new Vector2(0.39f, 0.06f), new Vector2(0.62f, 0.38f), PrototypeUiTheme.PaperMuted);
-            CreateRoomObject(parent, "货架", new Vector2(0.75f, 0.06f), new Vector2(0.98f, 0.38f), PrototypeUiTheme.PaperMuted);
-            CreateRoomObject(parent, "公告栏\n按 E 打开订单场景", new Vector2(0.01f, 0.00f), new Vector2(0.13f, 0.13f), PrototypeUiTheme.CardSelected, 17);
-            CreateRoomObject(parent, "门\n进入卧室", new Vector2(0.78f, 0.94f), new Vector2(0.98f, 1.00f), PrototypeUiTheme.Card, 16);
+            CreateRoomObject(parent, "收银台", new Vector2(0.04f, 0.62f), new Vector2(0.24f, 0.82f), PrototypeUiTheme.Card);
+            CreateRoomObject(parent, "货架", new Vector2(0.36f, 0.52f), new Vector2(0.58f, 0.86f), PrototypeUiTheme.Card);
+            CreateRoomObject(parent, "货架", new Vector2(0.70f, 0.52f), new Vector2(0.92f, 0.86f), PrototypeUiTheme.Card);
+            CreateRoomObject(parent, "工作台", new Vector2(0.42f, 0.16f), new Vector2(0.76f, 0.32f), PrototypeUiTheme.Card);
+            CreateRoomObject(parent, "公告栏\n订单", new Vector2(0.01f, 0.00f), new Vector2(0.15f, 0.15f), PrototypeUiTheme.CardSelected, 17);
+            CreateRoomObject(parent, "门\n卧室", new Vector2(0.78f, 0.93f), new Vector2(0.98f, 1.00f), PrototypeUiTheme.Card, 16);
+            CreateRoomObject(parent, "小窗", new Vector2(0.08f, 0.88f), new Vector2(0.26f, 0.98f), PrototypeUiTheme.Card, 16);
         }
 
         private static void BuildBedroomRoomObjects(Transform parent)
         {
-            CreateRoomObject(parent, "床\n用于结算当天", new Vector2(0.02f, 0.42f), new Vector2(0.20f, 0.92f), PrototypeUiTheme.Card, 21);
-            CreateRoomObject(parent, "桌子", new Vector2(0.44f, 0.78f), new Vector2(0.62f, 0.94f), PrototypeUiTheme.PaperMuted, 21);
-            CreateRoomObject(parent, "椅子", new Vector2(0.48f, 0.60f), new Vector2(0.58f, 0.70f), PrototypeUiTheme.PaperMuted, 20);
-            CreateRoomObject(parent, "盆栽", new Vector2(0.74f, 0.78f), new Vector2(0.86f, 0.94f), PrototypeUiTheme.Card, 20);
-            CreateRoomObject(parent, "地毯", new Vector2(0.40f, 0.18f), new Vector2(0.78f, 0.46f), PrototypeUiTheme.PaperMuted, 22);
-            CreateRoomObject(parent, "门\n回到店铺", new Vector2(0.50f, 0.00f), new Vector2(0.66f, 0.12f), PrototypeUiTheme.Card, 16);
+            CreateRoomObject(parent, "床\n睡到明天", new Vector2(0.02f, 0.42f), new Vector2(0.20f, 0.92f), PrototypeUiTheme.Card, 21);
+            CreateRoomObject(parent, "桌子\n补货", new Vector2(0.40f, 0.74f), new Vector2(0.68f, 0.96f), PrototypeUiTheme.CardSelected, 21);
+            CreateRoomObject(parent, "椅子", new Vector2(0.47f, 0.56f), new Vector2(0.58f, 0.70f), PrototypeUiTheme.Card, 20);
+            CreateRoomObject(parent, "盆栽", new Vector2(0.76f, 0.76f), new Vector2(0.88f, 0.94f), PrototypeUiTheme.Card, 20);
+            CreateRoomObject(parent, "地毯", new Vector2(0.36f, 0.18f), new Vector2(0.78f, 0.44f), PrototypeUiTheme.Card, 22);
+            CreateRoomObject(parent, "门\n店铺", new Vector2(0.50f, 0.00f), new Vector2(0.66f, 0.12f), PrototypeUiTheme.Card, 16);
         }
 
         private string FormatMaterials()
@@ -414,8 +543,8 @@ namespace APlaceLikeMe.UI
         {
             var phaseText = state.Phase switch
             {
-                GamePhase.OrderSelection => currentRoom == RoomMode.Shop ? "白天营业：公告栏会打开独立订单场景；门通向卧室。" : "卧室：靠近床按 E 结束当天并结算。",
-                GamePhase.NightSummary => currentRoom == RoomMode.Bedroom ? "夜晚结算：可以补货，然后在床边按 E 进入下一天。" : "夜晚结算：回到卧室床边进入下一天。",
+                GamePhase.OrderSelection => currentRoom == RoomMode.Shop ? "白天营业：公告栏会打开订单；门会询问是否进入黑夜。" : "早上醒来：从卧室门回到店铺。",
+                GamePhase.NightSummary => currentRoom == RoomMode.Bedroom ? "夜晚：桌子补货，床边按 E 询问是否睡到明天。" : "夜晚：需要留在卧室，桌子补货或床边睡到明天。",
                 GamePhase.DayEnd => "原型完成：这间小店暂时打烊。",
                 _ => "小店准备中。"
             };
@@ -440,8 +569,8 @@ namespace APlaceLikeMe.UI
             var headerElement = header.gameObject.AddComponent<LayoutElement>();
             headerElement.minHeight = 132;
             var headerLayout = header.gameObject.AddComponent<VerticalLayoutGroup>();
-            headerLayout.padding = new RectOffset(18, 18, 12, 12);
-            headerLayout.spacing = 4;
+            headerLayout.padding = new RectOffset(22, 22, 14, 14);
+            headerLayout.spacing = 6;
             headerLayout.childControlWidth = true;
             titleText = CreateText(header, "Title", 30, FontStyle.Bold, PrototypeUiTheme.Ink);
             resourceText = CreateText(header, "Resources", 19, FontStyle.Normal, PrototypeUiTheme.InkMuted);
@@ -453,9 +582,46 @@ namespace APlaceLikeMe.UI
             shopElement.flexibleHeight = 1;
             BuildRoomFloor(shopPanel);
 
-            feedbackText = CreateText(root, "Feedback", 18, FontStyle.Normal, PrototypeUiTheme.Paper);
+            feedbackText = CreateText(root, "Feedback", 18, FontStyle.Normal, PrototypeUiTheme.InkMuted);
             var feedbackElement = feedbackText.gameObject.AddComponent<LayoutElement>();
             feedbackElement.minHeight = 36;
+
+            BuildConfirmationOverlay(canvas);
+        }
+
+        private void BuildConfirmationOverlay(Transform parent)
+        {
+            confirmationOverlay = CreatePanel(parent, "ConfirmationOverlay", new Vector2(0, 0), new Vector2(1, 1));
+            var overlayImage = confirmationOverlay.gameObject.AddComponent<Image>();
+            overlayImage.color = new Color32(252, 251, 247, 210);
+
+            var dialog = CreateCard(confirmationOverlay, "Dialog", PrototypeUiTheme.Paper);
+            dialog.anchorMin = new Vector2(0.32f, 0.34f);
+            dialog.anchorMax = new Vector2(0.68f, 0.66f);
+            dialog.offsetMin = Vector2.zero;
+            dialog.offsetMax = Vector2.zero;
+
+            var dialogLayout = dialog.gameObject.AddComponent<VerticalLayoutGroup>();
+            dialogLayout.padding = new RectOffset(28, 28, 24, 24);
+            dialogLayout.spacing = PrototypeUiTheme.SpaceLarge;
+            dialogLayout.childControlWidth = true;
+            dialogLayout.childControlHeight = true;
+
+            confirmationText = CreateText(dialog, "Message", 24, FontStyle.Bold, PrototypeUiTheme.Ink);
+            confirmationText.alignment = TextAnchor.MiddleCenter;
+            var messageElement = confirmationText.gameObject.AddComponent<LayoutElement>();
+            messageElement.flexibleHeight = 1;
+
+            var buttons = CreatePanel(dialog, "Buttons", new Vector2(0, 0), new Vector2(1, 0));
+            var buttonsElement = buttons.gameObject.AddComponent<LayoutElement>();
+            buttonsElement.minHeight = 68;
+            var buttonsLayout = buttons.gameObject.AddComponent<HorizontalLayoutGroup>();
+            buttonsLayout.spacing = PrototypeUiTheme.SpaceMedium;
+            buttonsLayout.childControlWidth = true;
+            buttonsLayout.childControlHeight = true;
+            buttonsLayout.childForceExpandWidth = true;
+
+            confirmationOverlay.gameObject.SetActive(false);
         }
 
         private void BuildRoomFloor(RectTransform parent)
@@ -477,6 +643,7 @@ namespace APlaceLikeMe.UI
             playerMarker.sizeDelta = new Vector2(46, 46);
             var playerImage = playerMarker.gameObject.AddComponent<Image>();
             playerImage.color = PrototypeUiTheme.Primary;
+            AddOutline(playerMarker.gameObject, 3);
             var playerLabel = CreateText(playerMarker, "PlayerLabel", 20, FontStyle.Bold, PrototypeUiTheme.Ink);
             playerLabel.text = "我";
             playerLabel.alignment = TextAnchor.MiddleCenter;
@@ -523,6 +690,7 @@ namespace APlaceLikeMe.UI
             var card = CreatePanel(parent, name, new Vector2(0, 0), new Vector2(1, 1));
             var image = card.gameObject.AddComponent<Image>();
             image.color = color;
+            AddOutline(card.gameObject, 2);
             return card;
         }
 
@@ -543,6 +711,45 @@ namespace APlaceLikeMe.UI
             labelRect.offsetMin = new Vector2(4, 4);
             labelRect.offsetMax = new Vector2(-4, -4);
             return roomObject;
+        }
+
+        private static Button CreateButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick, bool primary = false)
+        {
+            var buttonObject = new GameObject(label, typeof(RectTransform), typeof(Image), typeof(Button));
+            buttonObject.transform.SetParent(parent, false);
+            var image = buttonObject.GetComponent<Image>();
+            image.color = primary ? PrototypeUiTheme.Primary : PrototypeUiTheme.Card;
+            AddOutline(buttonObject, 2);
+
+            var button = buttonObject.GetComponent<Button>();
+            button.onClick.AddListener(onClick);
+            var colors = button.colors;
+            colors.normalColor = primary ? PrototypeUiTheme.Primary : PrototypeUiTheme.Card;
+            colors.highlightedColor = PrototypeUiTheme.PrimaryHover;
+            colors.pressedColor = PrototypeUiTheme.PaperMuted;
+            colors.disabledColor = PrototypeUiTheme.CardUnavailable;
+            button.colors = colors;
+
+            var labelText = CreateText(buttonObject.transform, "Label", 20, FontStyle.Bold, PrototypeUiTheme.Ink);
+            labelText.text = label;
+            labelText.alignment = TextAnchor.MiddleCenter;
+            var labelRect = labelText.GetComponent<RectTransform>();
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = new Vector2(8, 4);
+            labelRect.offsetMax = new Vector2(-8, -4);
+
+            var layout = buttonObject.AddComponent<LayoutElement>();
+            layout.minHeight = 60;
+            layout.preferredHeight = 60;
+            return button;
+        }
+
+        private static void AddOutline(GameObject target, int distance)
+        {
+            var outline = target.AddComponent<Outline>();
+            outline.effectColor = PrototypeUiTheme.Line;
+            outline.effectDistance = new Vector2(distance, -distance);
         }
 
         private static Text CreateText(Transform parent, string name, int fontSize, FontStyle style, Color color)

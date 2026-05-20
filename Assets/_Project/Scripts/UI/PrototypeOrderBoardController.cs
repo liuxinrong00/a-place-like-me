@@ -4,6 +4,7 @@ using APlaceLikeMe.Core;
 using APlaceLikeMe.Data;
 using APlaceLikeMe.Gameplay;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace APlaceLikeMe.UI
@@ -19,20 +20,29 @@ namespace APlaceLikeMe.UI
         private OrderDefinition selectedOrder;
         private RepairMethodDefinition selectedRepairMethod;
         private MaterialDefinition selectedSupplyMaterial;
+        private PrototypeInteractionPanelMode panelMode;
+        private GameObject canvasRoot;
         private Text orderDetailText;
         private Text repairMethodText;
+        private Text nightSummaryText;
+        private Text purchaseCountText;
         private Text feedbackText;
         private Transform orderListRoot;
         private Transform repairMethodRoot;
         private Transform supplyRoot;
         private Button repairButton;
         private Button buySupplyButton;
-        private Button nextDayButton;
+        private Button decreaseSupplyCountButton;
+        private Button increaseSupplyCountButton;
         private Button closeButton;
+        private string feedbackMessage;
+        private int selectedSupplyPurchaseCount = 1;
+        private bool isClosing;
 
         private void Start()
         {
             host = PrototypeGameController.Active;
+            panelMode = host == null ? PrototypeInteractionPanelMode.Orders : host.PendingPanelMode;
             BuildUi();
 
             if (host == null || host.Config == null)
@@ -45,15 +55,24 @@ namespace APlaceLikeMe.UI
             selectedOrder = host.State.TodaysOrders.FirstOrDefault();
             selectedRepairMethod = host.Config.RepairMethods.FirstOrDefault();
             selectedSupplyMaterial = host.State.MaterialStock.Keys.FirstOrDefault();
-            feedbackText.text = host.PendingPanelMode == PrototypeInteractionPanelMode.NightSummary
-                ? host.BuildNightSummaryText()
+            feedbackMessage = panelMode == PrototypeInteractionPanelMode.NightSummary
+                ? "夜晚补货：选择材料和数量后点击补货。"
                 : "公告栏：选择一个订单，再挑一种修补方式。";
             Render();
         }
 
+        private void OnDestroy()
+        {
+            if (canvasRoot != null)
+            {
+                Destroy(canvasRoot);
+                canvasRoot = null;
+            }
+        }
+
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Escape))
+            if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Escape))
             {
                 ClosePanel();
             }
@@ -62,7 +81,7 @@ namespace APlaceLikeMe.UI
         private void TryRepairSelectedOrder()
         {
             var result = host.TryCompleteOrderFromPanel(selectedOrder, selectedRepairMethod);
-            feedbackText.text = result.Message;
+            feedbackMessage = result.Message;
             if (result.Succeeded)
             {
                 selectedOrder = host.State.TodaysOrders.FirstOrDefault();
@@ -73,37 +92,84 @@ namespace APlaceLikeMe.UI
 
         private void TryBuySupply()
         {
-            var result = host.TryBuySupplyFromPanel(selectedSupplyMaterial);
-            feedbackText.text = result.Message;
+            var result = host.TryBuySupplyFromPanel(selectedSupplyMaterial, selectedSupplyPurchaseCount);
+            feedbackMessage = result.Message;
             Render();
         }
 
-        private void GoNextDay()
+        private void DecreaseSupplyPurchaseCount()
         {
-            host.GoNextDayFromPanel();
+            selectedSupplyPurchaseCount = Mathf.Max(1, selectedSupplyPurchaseCount - 1);
+            Render();
+        }
+
+        private void IncreaseSupplyPurchaseCount()
+        {
+            selectedSupplyPurchaseCount = Mathf.Min(10, selectedSupplyPurchaseCount + 1);
+            Render();
         }
 
         private void ClosePanel()
         {
-            host.CloseInteractionSceneFromPanel();
+            if (isClosing)
+            {
+                return;
+            }
+
+            isClosing = true;
+            if (canvasRoot != null)
+            {
+                canvasRoot.SetActive(false);
+                Destroy(canvasRoot);
+                canvasRoot = null;
+            }
+
+            if (host != null)
+            {
+                host.CloseInteractionSceneFromPanel();
+                return;
+            }
+
+            Destroy(gameObject);
         }
 
         private void Render()
         {
+            if (panelMode == PrototypeInteractionPanelMode.NightSummary)
+            {
+                RenderNightSummary();
+                return;
+            }
+
+            RenderOrderBoard();
+        }
+
+        private void RenderOrderBoard()
+        {
             RenderOrders();
             RenderRepairMethods();
-            RenderSupplies();
-            orderDetailText.text = selectedOrder == null ? "没有可处理订单。" : FormatOrderDetail(selectedOrder);
+            orderDetailText.text = selectedOrder == null ? "没有可处理订单。" : FormatOrderDetail(selectedOrder, host.State);
             repairMethodText.text = selectedOrder == null || selectedRepairMethod == null
                 ? "请选择订单和修补方式。"
                 : FormatRepairPreview(selectedOrder, selectedRepairMethod);
 
-            var inNightSummary = host.State.Phase == GamePhase.NightSummary;
-            repairButton.interactable = !inNightSummary && selectedOrder != null && selectedRepairMethod != null;
-            buySupplyButton.interactable = inNightSummary && selectedSupplyMaterial != null;
-            nextDayButton.interactable = inNightSummary;
+            feedbackText.text = feedbackMessage;
+            repairButton.interactable = selectedOrder != null && selectedRepairMethod != null;
             repairButton.GetComponentInChildren<Text>().text = selectedRepairMethod == null ? "开始修补" : $"开始修补：{selectedRepairMethod.DisplayName}";
-            buySupplyButton.GetComponentInChildren<Text>().text = selectedSupplyMaterial == null ? "补货" : $"补货：{selectedSupplyMaterial.DisplayName} +{host.Config.NightSupplyAmount} / -{host.Config.NightSupplyCost}";
+        }
+
+        private void RenderNightSummary()
+        {
+            RenderSupplies();
+            nightSummaryText.text = host.BuildNightSummaryText();
+            feedbackText.text = feedbackMessage;
+            buySupplyButton.interactable = selectedSupplyMaterial != null;
+            decreaseSupplyCountButton.interactable = selectedSupplyPurchaseCount > 1;
+            increaseSupplyCountButton.interactable = selectedSupplyPurchaseCount < 10;
+            purchaseCountText.text = $"{selectedSupplyPurchaseCount}/10";
+            buySupplyButton.GetComponentInChildren<Text>().text = selectedSupplyMaterial == null
+                ? "补货"
+                : $"补货：{selectedSupplyMaterial.DisplayName} +{selectedSupplyPurchaseCount} / {selectedSupplyPurchaseCount} 金币";
         }
 
         private void RenderOrders()
@@ -231,11 +297,20 @@ namespace APlaceLikeMe.UI
             return "可修补";
         }
 
-        private static string FormatOrderDetail(OrderDefinition order)
+        private static string FormatOrderDetail(OrderDefinition order, GameSessionState state)
         {
             var materialText = order.RequiredMaterials.Count == 0
                 ? "无"
-                : string.Join(" / ", order.RequiredMaterials.Select(material => $"{material.material.DisplayName} x{material.amount}"));
+                : string.Join(" / ", order.RequiredMaterials.Select(material =>
+                {
+                    var label = $"{material.material.DisplayName} x{material.amount}";
+                    if (material.material != null && !state.HasMaterial(material.material, material.amount))
+                    {
+                        return $"<color=#803020>{label}</color>";
+                    }
+
+                    return label;
+                }));
             var customerName = order.Customer == null ? "未知顾客" : order.Customer.DisplayName;
             var customerType = order.Customer == null ? "未知" : FormatCustomerType(order.Customer.CustomerType);
             return $"订单：{order.DisplayName}\n物品：{order.ItemType}\n损坏：{order.DamageLevel}\n顾客：{customerName} / {customerType}\n需要：{materialText}\n基础能量：{order.EnergyCost}\n基础报酬：{order.RewardCoins}\n备注：{order.CustomerNote}";
@@ -268,39 +343,130 @@ namespace APlaceLikeMe.UI
         private void BuildUi()
         {
             var canvas = CreateCanvas();
-            var root = CreateCard(canvas.transform, "OrderBoardRoot", PrototypeUiTheme.Paper);
+            canvasRoot = canvas.gameObject;
+            SceneManager.MoveGameObjectToScene(canvasRoot, gameObject.scene);
+
+            var backdrop = CreateCard(canvas.transform, "OrderBoardBackdrop", new Color32(252, 251, 247, 220));
+            var root = CreateCard(backdrop, "OrderBoardRoot", PrototypeUiTheme.Paper);
+            root.anchorMin = new Vector2(0.05f, 0.06f);
+            root.anchorMax = new Vector2(0.95f, 0.94f);
+
             var vertical = root.gameObject.AddComponent<VerticalLayoutGroup>();
-            vertical.padding = new RectOffset(22, 22, 18, 18);
-            vertical.spacing = PrototypeUiTheme.SpaceSmall;
+            vertical.padding = new RectOffset(24, 24, 20, 20);
+            vertical.spacing = PrototypeUiTheme.SpaceMedium;
             vertical.childControlHeight = true;
             vertical.childControlWidth = true;
+            vertical.childForceExpandHeight = false;
 
-            CreateText(root, "Title", 24, FontStyle.Bold, PrototypeUiTheme.Ink).text = "公告栏订单";
-            orderListRoot = CreateStack(root, "Orders", PrototypeUiTheme.SpaceSmall);
+            var title = CreateText(root, "Title", 28, FontStyle.Bold, PrototypeUiTheme.Ink);
+            title.text = panelMode == PrototypeInteractionPanelMode.NightSummary ? "夜晚补货" : "公告栏订单";
+            title.alignment = TextAnchor.MiddleCenter;
+            AddLayout(title.gameObject, 48, 48);
 
-            CreateText(root, "DetailTitle", 22, FontStyle.Bold, PrototypeUiTheme.Ink).text = "订单详情";
-            orderDetailText = CreateText(root, "OrderDetail", 17, FontStyle.Normal, PrototypeUiTheme.InkMuted);
+            if (panelMode == PrototypeInteractionPanelMode.NightSummary)
+            {
+                BuildNightSummaryUi(root);
+            }
+            else
+            {
+                BuildOrderBoardUi(root);
+            }
+        }
 
-            CreateText(root, "RepairTitle", 22, FontStyle.Bold, PrototypeUiTheme.Ink).text = "修补方式";
-            repairMethodRoot = CreateStack(root, "RepairMethods", PrototypeUiTheme.SpaceSmall);
-            repairMethodText = CreateText(root, "RepairPreview", 17, FontStyle.Normal, PrototypeUiTheme.InkMuted);
+        private void BuildOrderBoardUi(Transform root)
+        {
+            var content = CreatePanel(root, "Content", new Vector2(0, 0), new Vector2(1, 0));
+            AddLayout(content.gameObject, 0, 0, 1);
+            var contentLayout = content.gameObject.AddComponent<HorizontalLayoutGroup>();
+            contentLayout.spacing = PrototypeUiTheme.SpaceMedium;
+            contentLayout.childControlWidth = true;
+            contentLayout.childControlHeight = true;
+            contentLayout.childForceExpandWidth = false;
 
-            CreateText(root, "SupplyTitle", 22, FontStyle.Bold, PrototypeUiTheme.Ink).text = "夜晚补货";
-            supplyRoot = CreateStack(root, "Supplies", PrototypeUiTheme.SpaceSmall);
+            var ordersSection = CreateSection(content, "OrdersSection", "订单列表", 0.34f);
+            orderListRoot = CreateStack(ordersSection, "Orders", PrototypeUiTheme.SpaceSmall);
+            AddLayout(((RectTransform)orderListRoot).gameObject, 0, 0, 1);
+
+            var detailSection = CreateSection(content, "DetailSection", "订单详情", 0.33f);
+            orderDetailText = CreateText(detailSection, "OrderDetail", 18, FontStyle.Normal, PrototypeUiTheme.InkMuted);
+            AddLayout(orderDetailText.gameObject, 160, 190);
+
+            var previewTitle = CreateText(detailSection, "PreviewTitle", 22, FontStyle.Bold, PrototypeUiTheme.Ink);
+            previewTitle.text = "修补预览";
+            AddLayout(previewTitle.gameObject, 32, 32);
+
+            repairMethodText = CreateText(detailSection, "RepairPreview", 18, FontStyle.Normal, PrototypeUiTheme.InkMuted);
+            AddLayout(repairMethodText.gameObject, 0, 0, 1);
+
+            var toolsSection = CreateSection(content, "ToolsSection", "修补方式", 0.33f);
+            repairMethodRoot = CreateStack(toolsSection, "RepairMethods", PrototypeUiTheme.SpaceSmall);
+            AddLayout(((RectTransform)repairMethodRoot).gameObject, 0, 0, 1);
+
             feedbackText = CreateText(root, "Feedback", 18, FontStyle.Bold, PrototypeUiTheme.Ink);
+            feedbackText.alignment = TextAnchor.MiddleLeft;
+            AddLayout(feedbackText.gameObject, 76, 76);
 
+            var actions = CreateActions(root);
+            repairButton = CreateButton(actions, "开始修补", TryRepairSelectedOrder, true);
+            closeButton = CreateButton(actions, "返回场景", ClosePanel);
+        }
+
+        private void BuildNightSummaryUi(Transform root)
+        {
+            var content = CreatePanel(root, "NightContent", new Vector2(0, 0), new Vector2(1, 0));
+            AddLayout(content.gameObject, 0, 0, 1);
+            var contentLayout = content.gameObject.AddComponent<HorizontalLayoutGroup>();
+            contentLayout.spacing = PrototypeUiTheme.SpaceMedium;
+            contentLayout.childControlWidth = true;
+            contentLayout.childControlHeight = true;
+            contentLayout.childForceExpandWidth = false;
+
+            var summarySection = CreateSection(content, "SummarySection", "夜晚结算", 0.58f);
+            nightSummaryText = CreateText(summarySection, "NightSummary", 19, FontStyle.Normal, PrototypeUiTheme.InkMuted);
+            AddLayout(nightSummaryText.gameObject, 0, 0, 1);
+
+            var supplySection = CreateSection(content, "SupplySection", "补货", 0.42f);
+            supplyRoot = CreateScrollStack(supplySection, "SupplyScroll", "Supplies", PrototypeUiTheme.SpaceSmall);
+
+            var countRow = CreatePanel(root, "SupplyCount", new Vector2(0, 0), new Vector2(1, 0));
+            AddLayout(countRow.gameObject, 62, 62);
+            var countLayout = countRow.gameObject.AddComponent<HorizontalLayoutGroup>();
+            countLayout.spacing = PrototypeUiTheme.SpaceMedium;
+            countLayout.childControlWidth = true;
+            countLayout.childControlHeight = true;
+            countLayout.childForceExpandWidth = true;
+
+            decreaseSupplyCountButton = CreateButton(countRow, "←", DecreaseSupplyPurchaseCount);
+            var purchaseCountFrame = CreateCard(countRow, "PurchaseCountFrame", PrototypeUiTheme.Card);
+            AddLayout(purchaseCountFrame.gameObject, 56, 56);
+            purchaseCountText = CreateText(purchaseCountFrame, "PurchaseCount", 22, FontStyle.Bold, PrototypeUiTheme.Ink);
+            purchaseCountText.alignment = TextAnchor.MiddleCenter;
+            var purchaseCountRect = purchaseCountText.GetComponent<RectTransform>();
+            purchaseCountRect.anchorMin = Vector2.zero;
+            purchaseCountRect.anchorMax = Vector2.one;
+            purchaseCountRect.offsetMin = Vector2.zero;
+            purchaseCountRect.offsetMax = Vector2.zero;
+            increaseSupplyCountButton = CreateButton(countRow, "→", IncreaseSupplyPurchaseCount);
+
+            feedbackText = CreateText(root, "Feedback", 18, FontStyle.Bold, PrototypeUiTheme.Ink);
+            feedbackText.alignment = TextAnchor.MiddleLeft;
+            AddLayout(feedbackText.gameObject, 76, 76);
+
+            var actions = CreateActions(root);
+            buySupplyButton = CreateButton(actions, "补货", TryBuySupply, true);
+            closeButton = CreateButton(actions, "返回场景", ClosePanel);
+        }
+
+        private static RectTransform CreateActions(Transform root)
+        {
             var actions = CreatePanel(root, "Actions", new Vector2(0, 0), new Vector2(1, 0));
-            var actionsElement = actions.gameObject.AddComponent<LayoutElement>();
-            actionsElement.minHeight = 72;
+            AddLayout(actions.gameObject, 76, 76);
             var actionLayout = actions.gameObject.AddComponent<HorizontalLayoutGroup>();
             actionLayout.spacing = PrototypeUiTheme.SpaceMedium;
             actionLayout.childControlWidth = true;
             actionLayout.childControlHeight = true;
-
-            repairButton = CreateButton(actions, "开始修补", TryRepairSelectedOrder, true);
-            buySupplyButton = CreateButton(actions, "补货", TryBuySupply);
-            nextDayButton = CreateButton(actions, "进入下一天", GoNextDay, true);
-            closeButton = CreateButton(actions, "返回场景", ClosePanel);
+            actionLayout.childForceExpandWidth = true;
+            return actions;
         }
 
         private static RectTransform CreateCanvas()
@@ -340,6 +506,7 @@ namespace APlaceLikeMe.UI
             var card = CreatePanel(parent, name, new Vector2(0, 0), new Vector2(1, 1));
             var image = card.gameObject.AddComponent<Image>();
             image.color = color;
+            AddOutline(card.gameObject, 2);
             return card;
         }
 
@@ -354,6 +521,94 @@ namespace APlaceLikeMe.UI
             return stack;
         }
 
+        private static Transform CreateScrollStack(Transform parent, string scrollName, string contentName, int spacing)
+        {
+            var scroll = CreateCard(parent, scrollName, PrototypeUiTheme.Paper);
+            AddLayout(scroll.gameObject, 0, 0, 1);
+
+            var scrollRect = scroll.gameObject.AddComponent<ScrollRect>();
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
+            scrollRect.movementType = ScrollRect.MovementType.Clamped;
+            scrollRect.scrollSensitivity = 34f;
+
+            var viewport = CreatePanel(scroll, "Viewport", new Vector2(0, 0), new Vector2(1, 1));
+            viewport.offsetMin = new Vector2(8, 8);
+            viewport.offsetMax = new Vector2(-22, -8);
+            var viewportImage = viewport.gameObject.AddComponent<Image>();
+            viewportImage.color = new Color32(255, 255, 252, 1);
+            var mask = viewport.gameObject.AddComponent<Mask>();
+            mask.showMaskGraphic = false;
+
+            var content = CreatePanel(viewport, contentName, new Vector2(0, 1), new Vector2(1, 1));
+            content.pivot = new Vector2(0.5f, 1f);
+            content.anchoredPosition = Vector2.zero;
+            content.sizeDelta = Vector2.zero;
+
+            var layout = content.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.spacing = spacing;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandHeight = false;
+
+            var fitter = content.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var scrollbar = CreateScrollbar(scroll, "Scrollbar");
+            scrollRect.viewport = viewport;
+            scrollRect.content = content;
+            scrollRect.verticalScrollbar = scrollbar;
+            scrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport;
+            return content;
+        }
+
+        private static Scrollbar CreateScrollbar(Transform parent, string name)
+        {
+            var scrollbarObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Scrollbar));
+            scrollbarObject.transform.SetParent(parent, false);
+            var rect = scrollbarObject.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(1, 0);
+            rect.anchorMax = new Vector2(1, 1);
+            rect.pivot = new Vector2(1, 0.5f);
+            rect.sizeDelta = new Vector2(10, 0);
+            rect.offsetMin = new Vector2(-14, 8);
+            rect.offsetMax = new Vector2(-4, -8);
+            scrollbarObject.GetComponent<Image>().color = PrototypeUiTheme.PaperMuted;
+
+            var handle = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+            handle.transform.SetParent(scrollbarObject.transform, false);
+            var handleRect = handle.GetComponent<RectTransform>();
+            handleRect.anchorMin = Vector2.zero;
+            handleRect.anchorMax = Vector2.one;
+            handleRect.offsetMin = Vector2.zero;
+            handleRect.offsetMax = Vector2.zero;
+            handle.GetComponent<Image>().color = PrototypeUiTheme.Line;
+
+            var scrollbar = scrollbarObject.GetComponent<Scrollbar>();
+            scrollbar.direction = Scrollbar.Direction.BottomToTop;
+            scrollbar.handleRect = handleRect;
+            return scrollbar;
+        }
+
+        private static RectTransform CreateSection(Transform parent, string name, string title, float flexibleWidth)
+        {
+            var section = CreateCard(parent, name, PrototypeUiTheme.Card);
+            AddLayout(section.gameObject, 0, 0, 1, flexibleWidth);
+
+            var layout = section.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(14, 14, 12, 12);
+            layout.spacing = PrototypeUiTheme.SpaceSmall;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandHeight = false;
+
+            var titleText = CreateText(section, $"{name}Title", 22, FontStyle.Bold, PrototypeUiTheme.Ink);
+            titleText.text = title;
+            titleText.alignment = TextAnchor.MiddleCenter;
+            AddLayout(titleText.gameObject, 36, 36);
+            return section;
+        }
+
         private static Text CreateText(Transform parent, string name, int fontSize, FontStyle style, Color color)
         {
             var textObject = new GameObject(name, typeof(RectTransform), typeof(Text));
@@ -364,9 +619,20 @@ namespace APlaceLikeMe.UI
             text.fontStyle = style;
             text.color = color;
             text.font = GetDefaultFont();
+            text.supportRichText = true;
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.verticalOverflow = VerticalWrapMode.Truncate;
             return text;
+        }
+
+        private static LayoutElement AddLayout(GameObject target, float minHeight = 0, float preferredHeight = 0, float flexibleHeight = 0, float flexibleWidth = 0)
+        {
+            var layout = target.GetComponent<LayoutElement>() ?? target.AddComponent<LayoutElement>();
+            layout.minHeight = minHeight;
+            layout.preferredHeight = preferredHeight;
+            layout.flexibleHeight = flexibleHeight;
+            layout.flexibleWidth = flexibleWidth;
+            return layout;
         }
 
         private static Button CreateButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick, bool primary = false)
@@ -374,6 +640,7 @@ namespace APlaceLikeMe.UI
             var buttonObject = new GameObject(label, typeof(RectTransform), typeof(Image), typeof(Button));
             buttonObject.transform.SetParent(parent, false);
             buttonObject.GetComponent<Image>().color = primary ? PrototypeUiTheme.Primary : PrototypeUiTheme.Card;
+            AddOutline(buttonObject, 2);
             var button = buttonObject.GetComponent<Button>();
             button.onClick.AddListener(onClick);
             var colors = button.colors;
@@ -394,7 +661,15 @@ namespace APlaceLikeMe.UI
 
             var layout = buttonObject.AddComponent<LayoutElement>();
             layout.minHeight = label.Contains("\n") ? 74 : 56;
+            layout.preferredHeight = label.Contains("\n") ? 74 : 56;
             return button;
+        }
+
+        private static void AddOutline(GameObject target, int distance)
+        {
+            var outline = target.AddComponent<Outline>();
+            outline.effectColor = PrototypeUiTheme.Line;
+            outline.effectDistance = new Vector2(distance, -distance);
         }
 
         private static void SetButtonColor(Button button, Color color)
@@ -434,9 +709,14 @@ namespace APlaceLikeMe.UI
                 buySupplyButton.interactable = interactable;
             }
 
-            if (nextDayButton != null)
+            if (decreaseSupplyCountButton != null)
             {
-                nextDayButton.interactable = interactable;
+                decreaseSupplyCountButton.interactable = interactable;
+            }
+
+            if (increaseSupplyCountButton != null)
+            {
+                increaseSupplyCountButton.interactable = interactable;
             }
 
             if (closeButton != null)

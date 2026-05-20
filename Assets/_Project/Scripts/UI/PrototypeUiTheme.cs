@@ -4,22 +4,23 @@ namespace APlaceLikeMe.UI
 {
     public static class PrototypeUiTheme
     {
-        public static readonly Color32 Background = new(55, 43, 31, 255);
-        public static readonly Color32 Paper = new(246, 229, 188, 255);
-        public static readonly Color32 PaperMuted = new(226, 203, 155, 255);
-        public static readonly Color32 Card = new(255, 241, 204, 255);
-        public static readonly Color32 CardSelected = new(255, 211, 112, 255);
-        public static readonly Color32 CardUnavailable = new(226, 190, 158, 255);
-        public static readonly Color32 Primary = new(216, 155, 42, 255);
-        public static readonly Color32 PrimaryHover = new(238, 178, 55, 255);
-        public static readonly Color32 Ink = new(58, 45, 35, 255);
-        public static readonly Color32 InkMuted = new(111, 88, 66, 255);
-        public static readonly Color32 Danger = new(162, 72, 45, 255);
-        public static readonly Color32 Success = new(86, 120, 64, 255);
+        public static readonly Color32 Background = new(252, 251, 247, 255);
+        public static readonly Color32 Paper = new(255, 255, 252, 255);
+        public static readonly Color32 PaperMuted = new(244, 243, 238, 255);
+        public static readonly Color32 Card = new(255, 255, 252, 255);
+        public static readonly Color32 CardSelected = new(235, 239, 229, 255);
+        public static readonly Color32 CardUnavailable = new(238, 238, 232, 255);
+        public static readonly Color32 Primary = new(238, 242, 231, 255);
+        public static readonly Color32 PrimaryHover = new(224, 232, 216, 255);
+        public static readonly Color32 Ink = new(28, 28, 26, 255);
+        public static readonly Color32 InkMuted = new(84, 82, 76, 255);
+        public static readonly Color32 Danger = new(128, 64, 55, 255);
+        public static readonly Color32 Success = new(73, 105, 72, 255);
+        public static readonly Color32 Line = new(28, 28, 26, 255);
 
-        public const int Radius = 14;
-        public const int SpaceSmall = 8;
-        public const int SpaceMedium = 12;
-        public const int SpaceLarge = 20;
+        public const int Radius = 4;
+        public const int SpaceSmall = 10;
+        public const int SpaceMedium = 16;
+        public const int SpaceLarge = 24;
     }
 }
