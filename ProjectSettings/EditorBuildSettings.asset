@@ -12,6 +12,12 @@ EditorBuildSettings:
     path: Assets/_Project/Scenes/S_OrderBoardUI.unity
     guid: 6aa9f1d2ef8740e88a4c0c9407a0a301
   - enabled: 1
+    path: Assets/_Project/Scenes/Store.unity
+    guid: 00496bb047bbe6a4f83e973f050d4ced
+  - enabled: 1
+    path: Assets/_Project/Scenes/BedRoom.unity
+    guid: bb9efb9c091846445870a83c9e4b7190
+  - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 2cda990e2423bbf4892e6590ba056729
   m_configObjects: {}

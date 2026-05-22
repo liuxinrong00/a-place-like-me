@@ -76,11 +76,11 @@ namespace APlaceLikeMe.Gameplay
 
             if (!state.TrySpendCoins(cost))
             {
-                return new OrderResult(false, $"金币不足，补货需要 {cost}。");
+                return new OrderResult(false, $"金币不足，购买材料需要 {cost}。");
             }
 
             state.AddMaterial(material, amount);
-            return new OrderResult(true, $"夜晚补货：{material.DisplayName} +{amount}，花费 {cost} 金币");
+            return new OrderResult(true, $"购买材料：{material.DisplayName} +{amount}，花费 {cost} 金币");
         }
 
         public int GetFinalEnergyCost(OrderDefinition order, RepairMethodDefinition repairMethod)
