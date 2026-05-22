@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using APlaceLikeMe.Core;
 using APlaceLikeMe.Data;
@@ -6,6 +7,7 @@ using APlaceLikeMe.Gameplay;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using UnityEngine.Tilemaps;
 using UnityEngine.UI;
 
 namespace APlaceLikeMe.UI
@@ -20,13 +22,26 @@ namespace APlaceLikeMe.UI
 
         private const string StoreSceneName = "Store";
         private const string BedroomSceneName = "BedRoom";
+        private const string SampleSceneName = "SampleScene";
         private const string InteractionSceneName = "S_OrderBoardUI";
         private const string RuntimeRootName = "PrototypeRuntime";
         private const string PlayerObjectName = "LXR";
         private const string LegacyPlayerObjectName = "Player";
+        private const string InteractionMarkerRootName = "Interaction";
+        private const string LegacyInteractionMarkerRootName = "Intraction";
         private const float CameraOrthographicSize = 5f;
         private const float InteractionRadius = 0.55f;
+#if UNITY_EDITOR
+        private const string PrototypeConfigAssetPath = "Assets/_Project/ScriptableObjects/GameConfig/PrototypeGameConfig.asset";
+#endif
 
+        private static readonly Vector3Int[] TilemapRegionDirections =
+        {
+            Vector3Int.left,
+            Vector3Int.right,
+            Vector3Int.up,
+            Vector3Int.down
+        };
         private static readonly Vector2 StoreSpawn = new(-3.94f, -0.03f);
         private static readonly Vector2 StoreFromBedroomSpawn = new(-6.6f, 1.1f);
         private static readonly Vector2 BedroomFromStoreSpawn = new(-3.0f, -6.4f);
@@ -47,10 +62,15 @@ namespace APlaceLikeMe.UI
         private Coroutine roomSwitchRoutine;
         private Transform currentPlayer;
         private Camera roomCamera;
+        private Rect currentMovementBounds = StoreMovementBounds;
+        private Rect currentCameraBounds = StoreCameraBounds;
         private PrototypeInteractionPanelMode pendingPanelMode = PrototypeInteractionPanelMode.Orders;
         private bool isInteractionSceneLoaded;
         private bool suppressNextInteractInput;
         private bool isRoomSwitching;
+        private bool hasStartupRoomOverride;
+        private RoomMode startupRoomOverride = RoomMode.Store;
+        private Vector2 startupSpawnOverride = StoreSpawn;
         private Text titleText;
         private Text resourceText;
         private Text statusText;
@@ -68,9 +88,24 @@ namespace APlaceLikeMe.UI
         public PrototypeInteractionPanelMode PendingPanelMode => pendingPanelMode;
         public bool AreWorldControlsLocked => isRoomSwitching || isInteractionSceneLoaded || IsConfirmationOpen();
 
+        private void Awake()
+        {
+            if (Active != null && Active != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            Active = this;
+        }
+
         private void Start()
         {
-            Active = this;
+            if (Active != this)
+            {
+                return;
+            }
+
             Initialize(config);
         }
 
@@ -174,7 +209,7 @@ namespace APlaceLikeMe.UI
                 return;
             }
 
-            var cameraBounds = currentRoom == RoomMode.Store ? StoreCameraBounds : BedroomCameraBounds;
+            var cameraBounds = currentCameraBounds;
             var halfHeight = roomCamera.orthographicSize;
             var halfWidth = halfHeight * Mathf.Max(1.0f, roomCamera.aspect);
             var cameraX = ClampCameraAxis(playerPosition.x, cameraBounds.xMin, cameraBounds.xMax, halfWidth);
@@ -189,7 +224,9 @@ namespace APlaceLikeMe.UI
             state.SetTodaysOrders(orders);
             UnloadInteractionSceneIfLoaded();
             feedbackText.text = $"第 {state.CurrentDay} 天开店。到蓝色工作台接订单，门可以进入卧室。";
-            SwitchRoom(RoomMode.Store, StoreSpawn);
+            var startupRoom = hasStartupRoomOverride ? startupRoomOverride : RoomMode.Store;
+            var startupSpawn = hasStartupRoomOverride ? startupSpawnOverride : StoreSpawn;
+            SwitchRoom(startupRoom, startupSpawn);
             Render();
         }
 
@@ -300,19 +337,6 @@ namespace APlaceLikeMe.UI
             roomCamera = null;
 
             var targetSceneName = GetSceneName(room);
-            if (!string.IsNullOrEmpty(loadedRoomSceneName) && loadedRoomSceneName != targetSceneName)
-            {
-                var oldScene = SceneManager.GetSceneByName(loadedRoomSceneName);
-                if (oldScene.IsValid() && oldScene.isLoaded)
-                {
-                    var unloadOperation = SceneManager.UnloadSceneAsync(oldScene);
-                    while (unloadOperation != null && !unloadOperation.isDone)
-                    {
-                        yield return null;
-                    }
-                }
-            }
-
             var targetScene = SceneManager.GetSceneByName(targetSceneName);
             if (!targetScene.IsValid() || !targetScene.isLoaded)
             {
@@ -335,6 +359,8 @@ namespace APlaceLikeMe.UI
                 }
             }
 
+            yield return UnloadOtherGameplayScenes(targetSceneName);
+
             targetScene = SceneManager.GetSceneByName(targetSceneName);
             if (!targetScene.IsValid() || !targetScene.isLoaded)
             {
@@ -354,25 +380,46 @@ namespace APlaceLikeMe.UI
 
         private void SetupRoomScene(Scene scene, RoomMode room, Vector2 spawnPosition)
         {
+            ConfigureRuntimeBounds(scene, room);
             SetRoomCamera(scene);
             var runtimeRoot = CreateRuntimeRoot(scene);
             SetupPlayer(scene, room, spawnPosition);
 
             if (room == RoomMode.Store)
             {
-                CreateInteractable(runtimeRoot.transform, "BedroomDoorTrigger", PrototypeSceneInteractionKind.StoreBedroomDoor, new Vector2(-2.0f, 1.0f), new Vector2(3.4f, 2.2f), "按 E：进入卧室");
-                CreateInteractable(runtimeRoot.transform, "OrderBoardTrigger", PrototypeSceneInteractionKind.OrderBoard, new Vector2(-4.0f, -2.6f), new Vector2(8.6f, 2.6f), "按 E：接订单");
+                CreateStoreInteractables(scene, runtimeRoot.transform);
             }
             else
             {
-                CreateInteractable(runtimeRoot.transform, "StoreDoorTrigger", PrototypeSceneInteractionKind.BedroomStoreDoor, new Vector2(-3.0f, -7.0f), new Vector2(4.5f, 1.6f), "按 E：回到店铺");
-                CreateInteractable(runtimeRoot.transform, "BedTrigger", PrototypeSceneInteractionKind.Bed, new Vector2(-6.0f, 1.9f), new Vector2(3.0f, 2.4f), "按 E：结束今天");
-                CreateInteractable(runtimeRoot.transform, "SupplyTableTrigger", PrototypeSceneInteractionKind.SupplyTable, new Vector2(2.5f, -3.0f), new Vector2(8.8f, 3.2f), "按 E：购买材料");
+                CreateBedroomInteractables(scene, runtimeRoot.transform);
             }
 
             if (currentPlayer != null)
             {
                 UpdateCameraForPlayer(currentPlayer.position);
+            }
+        }
+
+        private static IEnumerator UnloadOtherGameplayScenes(string targetSceneName)
+        {
+            foreach (var sceneName in new[] { StoreSceneName, BedroomSceneName, SampleSceneName })
+            {
+                if (sceneName == targetSceneName)
+                {
+                    continue;
+                }
+
+                var scene = SceneManager.GetSceneByName(sceneName);
+                if (!scene.IsValid() || !scene.isLoaded)
+                {
+                    continue;
+                }
+
+                var unloadOperation = SceneManager.UnloadSceneAsync(scene);
+                while (unloadOperation != null && !unloadOperation.isDone)
+                {
+                    yield return null;
+                }
             }
         }
 
@@ -388,8 +435,279 @@ namespace APlaceLikeMe.UI
             RemoveLegacyPlayer(scene, playerObject);
 
             playerObject.transform.position = new Vector3(spawnPosition.x, spawnPosition.y, playerObject.transform.position.z);
-            ConfigurePlayerMovement(playerObject, room == RoomMode.Store ? StoreMovementBounds : BedroomMovementBounds);
+            ConfigurePlayerMovement(playerObject, currentMovementBounds);
             currentPlayer = playerObject.transform;
+        }
+
+        private void ConfigureRuntimeBounds(Scene scene, RoomMode room)
+        {
+            var sceneBounds = CalculateSceneTileBounds(scene);
+            if (!sceneBounds.HasValue)
+            {
+                currentMovementBounds = room == RoomMode.Store ? StoreMovementBounds : BedroomMovementBounds;
+                currentCameraBounds = room == RoomMode.Store ? StoreCameraBounds : BedroomCameraBounds;
+                return;
+            }
+
+            currentMovementBounds = sceneBounds.Value;
+            currentCameraBounds = ExpandRect(sceneBounds.Value, 0.5f, 0.5f);
+        }
+
+        private static Rect? CalculateSceneTileBounds(Scene scene)
+        {
+            var hasBounds = false;
+            var min = Vector2.zero;
+            var max = Vector2.zero;
+            foreach (var rootObject in scene.GetRootGameObjects())
+            {
+                foreach (var tilemap in rootObject.GetComponentsInChildren<Tilemap>(true))
+                {
+                    if (IsInteractionMarkerTilemap(tilemap))
+                    {
+                        continue;
+                    }
+
+                    var localBounds = CalculateTilemapBounds(tilemap);
+                    if (!localBounds.HasValue)
+                    {
+                        continue;
+                    }
+
+                    if (!hasBounds)
+                    {
+                        min = localBounds.Value.min;
+                        max = localBounds.Value.max;
+                        hasBounds = true;
+                        continue;
+                    }
+
+                    min = Vector2.Min(min, localBounds.Value.min);
+                    max = Vector2.Max(max, localBounds.Value.max);
+                }
+            }
+
+            return hasBounds ? Rect.MinMaxRect(min.x, min.y, max.x, max.y) : null;
+        }
+
+        private static void CreateBedroomInteractables(Scene scene, Transform runtimeRoot)
+        {
+            var markerRegions = FindInteractionMarkerRegions(scene);
+            if (markerRegions.Count < 3)
+            {
+                CreateFallbackBedroomInteractables(runtimeRoot);
+                return;
+            }
+
+            var bedRegion = markerRegions.OrderBy(region => region.Min.x).First();
+            var exitRegion = markerRegions
+                .Where(region => !region.Equals(bedRegion))
+                .OrderBy(region => region.Min.y)
+                .ThenBy(region => Mathf.Abs(region.Center.x))
+                .First();
+            var supplyRegion = markerRegions
+                .Where(region => !region.Equals(bedRegion) && !region.Equals(exitRegion))
+                .OrderByDescending(region => region.Max.x)
+                .ThenByDescending(region => region.Center.y)
+                .First();
+
+            CreateInteractable(runtimeRoot, "StoreDoorTrigger", PrototypeSceneInteractionKind.BedroomStoreDoor, exitRegion.Center, exitRegion.Size, "按 E：回到店铺");
+            CreateInteractable(runtimeRoot, "BedTrigger", PrototypeSceneInteractionKind.Bed, bedRegion.Center, bedRegion.Size, "按 E：结束今天");
+            CreateInteractable(runtimeRoot, "SupplyTableTrigger", PrototypeSceneInteractionKind.SupplyTable, supplyRegion.Center, supplyRegion.Size, "按 E：购买材料");
+        }
+
+        private static void CreateStoreInteractables(Scene scene, Transform runtimeRoot)
+        {
+            var markerRegions = FindInteractionMarkerRegions(scene);
+            if (markerRegions.Count < 2)
+            {
+                CreateFallbackStoreInteractables(runtimeRoot);
+                return;
+            }
+
+            var doorRegion = markerRegions
+                .OrderByDescending(region => region.Max.y)
+                .ThenBy(region => Mathf.Abs(region.Center.x))
+                .First();
+            var orderBoardRegions = markerRegions
+                .Where(region => !region.Equals(doorRegion))
+                .OrderBy(region => region.Min.y)
+                .ThenBy(region => region.Min.x)
+                .ToList();
+
+            CreateInteractable(runtimeRoot, "BedroomDoorTrigger", PrototypeSceneInteractionKind.StoreBedroomDoor, doorRegion.Center, doorRegion.Size, "按 E：进入卧室");
+            for (var index = 0; index < orderBoardRegions.Count; index++)
+            {
+                var orderBoardRegion = orderBoardRegions[index];
+                CreateInteractable(runtimeRoot, $"OrderBoardTrigger_{index + 1}", PrototypeSceneInteractionKind.OrderBoard, orderBoardRegion.Center, orderBoardRegion.Size, "按 E：接订单");
+            }
+        }
+
+        private static void CreateFallbackStoreInteractables(Transform runtimeRoot)
+        {
+            CreateInteractable(runtimeRoot, "BedroomDoorTrigger", PrototypeSceneInteractionKind.StoreBedroomDoor, new Vector2(-2.0f, 1.0f), new Vector2(3.4f, 2.2f), "按 E：进入卧室");
+            CreateInteractable(runtimeRoot, "OrderBoardTrigger", PrototypeSceneInteractionKind.OrderBoard, new Vector2(-4.0f, -2.6f), new Vector2(8.6f, 2.6f), "按 E：接订单");
+        }
+
+        private static void CreateFallbackBedroomInteractables(Transform runtimeRoot)
+        {
+            CreateInteractable(runtimeRoot, "StoreDoorTrigger", PrototypeSceneInteractionKind.BedroomStoreDoor, new Vector2(-3.0f, -7.0f), new Vector2(4.5f, 1.6f), "按 E：回到店铺");
+            CreateInteractable(runtimeRoot, "BedTrigger", PrototypeSceneInteractionKind.Bed, new Vector2(-6.0f, 1.9f), new Vector2(3.0f, 2.4f), "按 E：结束今天");
+            CreateInteractable(runtimeRoot, "SupplyTableTrigger", PrototypeSceneInteractionKind.SupplyTable, new Vector2(2.5f, -3.0f), new Vector2(8.8f, 3.2f), "按 E：购买材料");
+        }
+
+        private static List<TilemapInteractionRegion> FindInteractionMarkerRegions(Scene scene)
+        {
+            var markerRoot = FindSceneObject(scene, InteractionMarkerRootName);
+            if (markerRoot == null)
+            {
+                markerRoot = FindSceneObject(scene, LegacyInteractionMarkerRootName);
+            }
+
+            var regions = new List<TilemapInteractionRegion>();
+            if (markerRoot == null)
+            {
+                return regions;
+            }
+
+            foreach (var tilemap in markerRoot.GetComponentsInChildren<Tilemap>(true))
+            {
+                regions.AddRange(FindConnectedTileRegions(tilemap));
+            }
+
+            return regions;
+        }
+
+        private static List<TilemapInteractionRegion> FindConnectedTileRegions(Tilemap tilemap)
+        {
+            var remainingCells = new HashSet<Vector3Int>();
+            foreach (var cellPosition in tilemap.cellBounds.allPositionsWithin)
+            {
+                if (tilemap.HasTile(cellPosition))
+                {
+                    remainingCells.Add(cellPosition);
+                }
+            }
+
+            var regions = new List<TilemapInteractionRegion>();
+            while (remainingCells.Count > 0)
+            {
+                var startCell = remainingCells.First();
+                var regionCells = FloodFillTileRegion(startCell, remainingCells);
+                regions.Add(CreateTilemapInteractionRegion(tilemap, regionCells));
+            }
+
+            return regions;
+        }
+
+        private static List<Vector3Int> FloodFillTileRegion(Vector3Int startCell, HashSet<Vector3Int> remainingCells)
+        {
+            var regionCells = new List<Vector3Int>();
+            var pendingCells = new Queue<Vector3Int>();
+            pendingCells.Enqueue(startCell);
+            remainingCells.Remove(startCell);
+
+            while (pendingCells.Count > 0)
+            {
+                var currentCell = pendingCells.Dequeue();
+                regionCells.Add(currentCell);
+
+                foreach (var direction in TilemapRegionDirections)
+                {
+                    var neighborCell = currentCell + direction;
+                    if (!remainingCells.Remove(neighborCell))
+                    {
+                        continue;
+                    }
+
+                    pendingCells.Enqueue(neighborCell);
+                }
+            }
+
+            return regionCells;
+        }
+
+        private static TilemapInteractionRegion CreateTilemapInteractionRegion(Tilemap tilemap, List<Vector3Int> cells)
+        {
+            var minX = cells.Min(cell => cell.x);
+            var minY = cells.Min(cell => cell.y);
+            var maxX = cells.Max(cell => cell.x);
+            var maxY = cells.Max(cell => cell.y);
+            return CreateTilemapRegionFromCellBounds(tilemap, minX, minY, maxX, maxY);
+        }
+
+        private static Rect? CalculateTilemapBounds(Tilemap tilemap)
+        {
+            var hasTile = false;
+            var minX = 0;
+            var minY = 0;
+            var maxX = 0;
+            var maxY = 0;
+            foreach (var cellPosition in tilemap.cellBounds.allPositionsWithin)
+            {
+                if (!tilemap.HasTile(cellPosition))
+                {
+                    continue;
+                }
+
+                if (!hasTile)
+                {
+                    minX = maxX = cellPosition.x;
+                    minY = maxY = cellPosition.y;
+                    hasTile = true;
+                    continue;
+                }
+
+                minX = Mathf.Min(minX, cellPosition.x);
+                minY = Mathf.Min(minY, cellPosition.y);
+                maxX = Mathf.Max(maxX, cellPosition.x);
+                maxY = Mathf.Max(maxY, cellPosition.y);
+            }
+
+            if (!hasTile)
+            {
+                return null;
+            }
+
+            var region = CreateTilemapRegionFromCellBounds(tilemap, minX, minY, maxX, maxY);
+            return Rect.MinMaxRect(region.Min.x, region.Min.y, region.Max.x, region.Max.y);
+        }
+
+        private static TilemapInteractionRegion CreateTilemapRegionFromCellBounds(Tilemap tilemap, int minX, int minY, int maxX, int maxY)
+        {
+            var minWorld = tilemap.CellToWorld(new Vector3Int(minX, minY, 0));
+            var maxWorld = tilemap.CellToWorld(new Vector3Int(maxX + 1, maxY + 1, 0));
+            var min = Vector2.Min(minWorld, maxWorld);
+            var max = Vector2.Max(minWorld, maxWorld);
+            var size = max - min;
+            size.x = Mathf.Max(1.0f, size.x);
+            size.y = Mathf.Max(1.0f, size.y);
+
+            return new TilemapInteractionRegion(min, max, size);
+        }
+
+        private static bool IsInteractionMarkerTilemap(Tilemap tilemap)
+        {
+            var parent = tilemap.transform.parent;
+            while (parent != null)
+            {
+                if (parent.name == InteractionMarkerRootName || parent.name == LegacyInteractionMarkerRootName)
+                {
+                    return true;
+                }
+
+                parent = parent.parent;
+            }
+
+            return false;
+        }
+
+        private static Rect ExpandRect(Rect rect, float horizontalPadding, float verticalPadding)
+        {
+            return Rect.MinMaxRect(
+                rect.xMin - horizontalPadding,
+                rect.yMin - verticalPadding,
+                rect.xMax + horizontalPadding,
+                rect.yMax + verticalPadding);
         }
 
         private void ConfigurePlayerMovement(GameObject playerObject, Rect bounds)
@@ -481,6 +799,22 @@ namespace APlaceLikeMe.UI
             interactable.Configure(kind, prompt);
         }
 
+        private readonly struct TilemapInteractionRegion
+        {
+            public TilemapInteractionRegion(Vector2 min, Vector2 max, Vector2 size)
+            {
+                Min = min;
+                Max = max;
+                Center = (min + max) * 0.5f;
+                Size = size;
+            }
+
+            public Vector2 Min { get; }
+            public Vector2 Max { get; }
+            public Vector2 Center { get; }
+            public Vector2 Size { get; }
+        }
+
         private void SetRoomCamera(Scene roomScene)
         {
             roomCamera = null;
@@ -519,19 +853,30 @@ namespace APlaceLikeMe.UI
                 return null;
             }
 
-            var playerPosition = currentPlayer.position;
-            var hits = Physics2D.OverlapCircleAll(playerPosition, InteractionRadius);
+            var playerPosition = (Vector2)currentPlayer.position;
             PrototypeSceneInteractable nearest = null;
             var nearestDistance = float.MaxValue;
-            foreach (var hit in hits)
+            var maxDistance = InteractionRadius * InteractionRadius;
+            foreach (var interactable in FindObjectsByType<PrototypeSceneInteractable>(FindObjectsSortMode.None))
             {
-                var interactable = hit.GetComponent<PrototypeSceneInteractable>();
-                if (interactable == null)
+                if (interactable.gameObject.scene != currentPlayer.gameObject.scene)
                 {
                     continue;
                 }
 
-                var distance = Vector2.SqrMagnitude((Vector2)interactable.transform.position - (Vector2)playerPosition);
+                var collider = interactable.GetComponent<Collider2D>();
+                if (collider == null || !collider.enabled)
+                {
+                    continue;
+                }
+
+                var closestPoint = collider.ClosestPoint(playerPosition);
+                var distance = Vector2.SqrMagnitude(closestPoint - playerPosition);
+                if (distance > maxDistance)
+                {
+                    continue;
+                }
+
                 if (distance < nearestDistance)
                 {
                     nearest = interactable;
@@ -694,9 +1039,82 @@ namespace APlaceLikeMe.UI
             return Mathf.Clamp(value, min + halfSize, max - halfSize);
         }
 
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void EnsureControllerForDirectRoomPlay()
+        {
+            if (Active != null || FindFirstObjectByType<PrototypeGameController>() != null)
+            {
+                return;
+            }
+
+            var activeScene = SceneManager.GetActiveScene();
+            if (!TryGetRoomMode(activeScene.name, out var room))
+            {
+                return;
+            }
+
+            var prototypeConfig = UnityEditor.AssetDatabase.LoadAssetAtPath<PrototypeGameConfig>(PrototypeConfigAssetPath);
+            if (prototypeConfig == null)
+            {
+                Debug.LogWarning($"Cannot start prototype interactions without config at {PrototypeConfigAssetPath}.");
+                return;
+            }
+
+            var controllerObject = new GameObject("PrototypeGameController");
+            DontDestroyOnLoad(controllerObject);
+
+            var controller = controllerObject.AddComponent<PrototypeGameController>();
+            controller.config = prototypeConfig;
+            controller.hasStartupRoomOverride = true;
+            controller.startupRoomOverride = room;
+            controller.startupSpawnOverride = GetExistingPlayerPosition(activeScene, room);
+        }
+
+        private static bool TryGetRoomMode(string sceneName, out RoomMode room)
+        {
+            if (sceneName == StoreSceneName)
+            {
+                room = RoomMode.Store;
+                return true;
+            }
+
+            if (sceneName == BedroomSceneName)
+            {
+                room = RoomMode.Bedroom;
+                return true;
+            }
+
+            if (sceneName == SampleSceneName)
+            {
+                room = RoomMode.Store;
+                return true;
+            }
+
+            room = RoomMode.Store;
+            return false;
+        }
+
+        private static Vector2 GetExistingPlayerPosition(Scene scene, RoomMode room)
+        {
+            var playerObject = FindSceneObject(scene, PlayerObjectName);
+            if (playerObject != null)
+            {
+                return playerObject.transform.position;
+            }
+
+            return room == RoomMode.Store ? StoreSpawn : BedroomFromStoreSpawn;
+        }
+#endif
+
         private void BuildUi()
         {
             var canvas = CreateCanvas();
+            if (hasStartupRoomOverride)
+            {
+                DontDestroyOnLoad(canvas.gameObject);
+            }
+
             var root = CreatePanel(canvas.transform, "HudRoot", new Vector2(0, 0), new Vector2(1, 1));
 
             var header = CreateOverlayCard(root, "Header", new Vector2(0.02f, 0.83f), new Vector2(0.48f, 0.98f));
@@ -891,7 +1309,8 @@ namespace APlaceLikeMe.UI
                 return;
             }
 
-            new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+            var eventSystem = new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+            DontDestroyOnLoad(eventSystem);
         }
     }
 
