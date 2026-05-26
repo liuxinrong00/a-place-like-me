@@ -26,6 +26,7 @@ namespace APlaceLikeMe.UI
         private const string InteractionSceneName = "S_OrderBoardUI";
         private const string OrderSceneName = "Order";
         private const string FixSceneName = "Fix";
+        private const string BuySceneName = "Buy";
         private const string ChooseUiSceneName = "ChooseUIScene";
         private const string FixTableMarkerName = "FixTable";
         private const string PhoneMarkerName = "Phone";
@@ -290,7 +291,7 @@ namespace APlaceLikeMe.UI
                         return;
                     }
 
-                    OpenInteractionScene(PrototypeInteractionPanelMode.MaterialPurchase);
+                    OpenInteractionScene(BuySceneName, PrototypeInteractionPanelMode.MaterialPurchase);
                     break;
                 case PrototypeSceneInteractionKind.OrderBoard:
                 case PrototypeSceneInteractionKind.Phone:

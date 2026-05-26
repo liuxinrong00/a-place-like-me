@@ -18,6 +18,9 @@ EditorBuildSettings:
     path: Assets/_Project/Scenes/Fix.unity
     guid: f604b139f1dbb3641beff2bba35b9ae8
   - enabled: 1
+    path: Assets/_Project/Scenes/Buy.unity
+    guid: b1dddf593924a8743b40bb6a5db6fa96
+  - enabled: 1
     path: Assets/_Project/Scenes/ChooseUIScene.unity
     guid: 3f0a462e751bf40498ab7ad8d9ebee5d
   - enabled: 1
