@@ -24,6 +24,21 @@ namespace APlaceLikeMe.UI
         private const string BedroomSceneName = "BedRoom";
         private const string SampleSceneName = "SampleScene";
         private const string InteractionSceneName = "S_OrderBoardUI";
+        private const string OrderSceneName = "Order";
+        private const string FixSceneName = "Fix";
+        private const string ChooseUiSceneName = "ChooseUIScene";
+        private const string FixTableMarkerName = "FixTable";
+        private const string PhoneMarkerName = "Phone";
+        private const string EnterBedroomMarkerName = "EnterBedRoom";
+        private const string EnterStoreMarkerName = "EnterStoreDoor";
+        private const string EnterStoreRoomMarkerName = "EnterStoreRoom";
+        private const string UiCanvasName = "UICanvas";
+        private const string MoneyHudName = "Money";
+        private const string EnergyHudName = "Energy";
+        private const string TimeHudName = "Time";
+        private const string ChooseYesButtonName = "Yes";
+        private const string ChooseNoButtonName = "No";
+        private const float InteractionPadding = 0.65f;
         private const string RuntimeRootName = "PrototypeRuntime";
         private const string PlayerObjectName = "LXR";
         private const string LegacyPlayerObjectName = "Player";
@@ -42,8 +57,9 @@ namespace APlaceLikeMe.UI
             Vector3Int.up,
             Vector3Int.down
         };
-        private static readonly Vector2 StoreSpawn = new(-3.94f, -0.03f);
-        private static readonly Vector2 StoreFromBedroomSpawn = new(-6.6f, 1.1f);
+        private static readonly Vector2 StoreCarpetSpawn = new(-16.5f, 4.5f);
+        private static readonly Vector2 StoreSpawn = StoreCarpetSpawn;
+        private static readonly Vector2 StoreFromBedroomSpawn = StoreCarpetSpawn;
         private static readonly Vector2 BedroomFromStoreSpawn = new(-3.0f, -6.4f);
         private static readonly Vector2 BedroomWakeSpawn = new(-6.0f, 0.8f);
         private static readonly Rect StoreMovementBounds = Rect.MinMaxRect(-21.5f, -5.4f, 9.5f, 7.2f);
@@ -60,33 +76,34 @@ namespace APlaceLikeMe.UI
         private RoomMode currentRoom = RoomMode.Store;
         private string loadedRoomSceneName;
         private Coroutine roomSwitchRoutine;
+        private string[] roomSpawnMarkerNames;
         private Transform currentPlayer;
         private Camera roomCamera;
         private Rect currentMovementBounds = StoreMovementBounds;
         private Rect currentCameraBounds = StoreCameraBounds;
         private PrototypeInteractionPanelMode pendingPanelMode = PrototypeInteractionPanelMode.Orders;
-        private bool isInteractionSceneLoaded;
+        private string loadedInteractionSceneName;
         private bool suppressNextInteractInput;
         private bool isRoomSwitching;
         private bool hasStartupRoomOverride;
         private RoomMode startupRoomOverride = RoomMode.Store;
         private Vector2 startupSpawnOverride = StoreSpawn;
-        private Text titleText;
-        private Text resourceText;
-        private Text statusText;
         private Text interactionHintText;
         private Text feedbackText;
         private RectTransform confirmationOverlay;
         private Text confirmationText;
         private System.Action confirmationYesAction;
         private System.Action confirmationNoAction;
+        private Component moneyHudText;
+        private Component energyHudText;
+        private Component timeHudText;
 
         public static PrototypeGameController Active { get; private set; }
         public GameSessionState State => state;
         public OrderService OrderService => orderService;
         public PrototypeGameConfig Config => config;
         public PrototypeInteractionPanelMode PendingPanelMode => pendingPanelMode;
-        public bool AreWorldControlsLocked => isRoomSwitching || isInteractionSceneLoaded || IsConfirmationOpen();
+        public bool AreWorldControlsLocked => isRoomSwitching || IsInteractionSceneLoaded() || IsConfirmationOpen();
 
         private void Awake()
         {
@@ -119,8 +136,18 @@ namespace APlaceLikeMe.UI
 
         private void Update()
         {
-            if (AreWorldControlsLocked)
+            if (isRoomSwitching || IsConfirmationOpen())
             {
+                return;
+            }
+
+            if (IsInteractionSceneLoaded())
+            {
+                if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Escape))
+                {
+                    CloseInteractionSceneFromPanel();
+                }
+
                 return;
             }
 
@@ -246,11 +273,11 @@ namespace APlaceLikeMe.UI
             {
                 case PrototypeSceneInteractionKind.StoreBedroomDoor:
                     feedbackText.text = "你进入了卧室。床可以结束当天，桌子可以买材料。";
-                    SwitchRoom(RoomMode.Bedroom, BedroomFromStoreSpawn);
+                    SwitchRoom(RoomMode.Bedroom, EnterStoreMarkerName, EnterStoreRoomMarkerName);
                     break;
                 case PrototypeSceneInteractionKind.BedroomStoreDoor:
                     feedbackText.text = "你回到了店铺。";
-                    SwitchRoom(RoomMode.Store, StoreFromBedroomSpawn);
+                    SwitchRoom(RoomMode.Store, EnterBedroomMarkerName);
                     break;
                 case PrototypeSceneInteractionKind.Bed:
                     TryUseBed();
@@ -266,6 +293,7 @@ namespace APlaceLikeMe.UI
                     OpenInteractionScene(PrototypeInteractionPanelMode.MaterialPurchase);
                     break;
                 case PrototypeSceneInteractionKind.OrderBoard:
+                case PrototypeSceneInteractionKind.Phone:
                     if (state.Phase == GamePhase.DayEnd)
                     {
                         feedbackText.text = "今天的原型流程已经结束。";
@@ -273,7 +301,17 @@ namespace APlaceLikeMe.UI
                         return;
                     }
 
-                    OpenInteractionScene(PrototypeInteractionPanelMode.Orders);
+                    OpenInteractionScene(OrderSceneName, PrototypeInteractionPanelMode.Orders);
+                    break;
+                case PrototypeSceneInteractionKind.RepairTable:
+                    if (state.Phase == GamePhase.DayEnd)
+                    {
+                        feedbackText.text = "今天的原型流程已经结束。";
+                        Render();
+                        return;
+                    }
+
+                    OpenInteractionScene(FixSceneName, PrototypeInteractionPanelMode.Orders);
                     break;
             }
         }
@@ -287,16 +325,7 @@ namespace APlaceLikeMe.UI
                 return;
             }
 
-            ShowConfirmation(
-                "是否结束今天并睡到明天？",
-                "睡到明天",
-                "再等等",
-                GoNextDay,
-                () =>
-                {
-                    feedbackText.text = "你还留在卧室。可以先去桌子购买材料。";
-                    Render();
-                });
+            OpenInteractionScene(ChooseUiSceneName, PrototypeInteractionPanelMode.NightSummary);
         }
 
         private void GoNextDay()
@@ -314,11 +343,23 @@ namespace APlaceLikeMe.UI
             state.StartNextDay(orders);
             UnloadInteractionSceneIfLoaded();
             feedbackText.text = $"第 {state.CurrentDay} 天早上。能量已恢复，从卧室门回店铺继续接订单。";
-            SwitchRoom(RoomMode.Bedroom, BedroomWakeSpawn);
+            var wakeSpawn = currentPlayer == null ? BedroomWakeSpawn : (Vector2)currentPlayer.position;
+            SwitchRoom(RoomMode.Bedroom, wakeSpawn);
             Render();
         }
 
         private void SwitchRoom(RoomMode room, Vector2 spawnPosition)
+        {
+            SwitchRoom(room, spawnPosition, null);
+        }
+
+        private void SwitchRoom(RoomMode room, params string[] spawnMarkerNames)
+        {
+            var fallbackSpawn = room == RoomMode.Store ? StoreFromBedroomSpawn : BedroomFromStoreSpawn;
+            SwitchRoom(room, fallbackSpawn, spawnMarkerNames);
+        }
+
+        private void SwitchRoom(RoomMode room, Vector2 spawnPosition, string[] spawnMarkerNames)
         {
             currentRoom = room;
             if (roomSwitchRoutine != null)
@@ -326,6 +367,7 @@ namespace APlaceLikeMe.UI
                 StopCoroutine(roomSwitchRoutine);
             }
 
+            roomSpawnMarkerNames = spawnMarkerNames;
             roomSwitchRoutine = StartCoroutine(SwitchRoomRoutine(room, spawnPosition));
             Render();
         }
@@ -370,12 +412,25 @@ namespace APlaceLikeMe.UI
                 yield break;
             }
 
+            spawnPosition = ResolveRoomSpawnPosition(targetScene, spawnPosition);
             loadedRoomSceneName = targetSceneName;
             SceneManager.SetActiveScene(targetScene);
             SetupRoomScene(targetScene, room, spawnPosition);
             isRoomSwitching = false;
             roomSwitchRoutine = null;
             Render();
+        }
+
+        private Vector2 ResolveRoomSpawnPosition(Scene targetScene, Vector2 fallbackSpawn)
+        {
+            if (roomSpawnMarkerNames == null || roomSpawnMarkerNames.Length == 0)
+            {
+                return fallbackSpawn;
+            }
+
+            var markerRegion = FindPreferredRegion(FindInteractionMarkerRegions(targetScene), roomSpawnMarkerNames);
+            roomSpawnMarkerNames = null;
+            return markerRegion?.Center ?? fallbackSpawn;
         }
 
         private void SetupRoomScene(Scene scene, RoomMode room, Vector2 spawnPosition)
@@ -398,6 +453,8 @@ namespace APlaceLikeMe.UI
             {
                 UpdateCameraForPlayer(currentPlayer.position);
             }
+
+            BindSceneHud(scene);
         }
 
         private static IEnumerator UnloadOtherGameplayScenes(string targetSceneName)
@@ -498,21 +555,25 @@ namespace APlaceLikeMe.UI
                 return;
             }
 
-            var bedRegion = markerRegions.OrderBy(region => region.Min.x).First();
-            var exitRegion = markerRegions
-                .Where(region => !region.Equals(bedRegion))
-                .OrderBy(region => region.Min.y)
-                .ThenBy(region => Mathf.Abs(region.Center.x))
+            var exitRegion = FindPreferredRegion(markerRegions, EnterStoreMarkerName, EnterStoreRoomMarkerName)
+                ?? markerRegions
+                    .OrderBy(region => region.Min.y)
+                    .ThenBy(region => Mathf.Abs(region.Center.x))
+                    .First();
+            var chooseUiRegion = markerRegions
+                .Where(region => !region.Equals(exitRegion))
+                .OrderBy(region => Mathf.Abs(region.Center.x + 2.5f))
+                .ThenByDescending(region => region.Center.y)
                 .First();
             var supplyRegion = markerRegions
-                .Where(region => !region.Equals(bedRegion) && !region.Equals(exitRegion))
+                .Where(region => !region.Equals(exitRegion) && !region.Equals(chooseUiRegion))
                 .OrderByDescending(region => region.Max.x)
                 .ThenByDescending(region => region.Center.y)
                 .First();
 
-            CreateInteractable(runtimeRoot, "StoreDoorTrigger", PrototypeSceneInteractionKind.BedroomStoreDoor, exitRegion.Center, exitRegion.Size, "按 E：回到店铺");
-            CreateInteractable(runtimeRoot, "BedTrigger", PrototypeSceneInteractionKind.Bed, bedRegion.Center, bedRegion.Size, "按 E：结束今天");
-            CreateInteractable(runtimeRoot, "SupplyTableTrigger", PrototypeSceneInteractionKind.SupplyTable, supplyRegion.Center, supplyRegion.Size, "按 E：购买材料");
+            CreateInteractable(runtimeRoot, "StoreDoorTrigger", PrototypeSceneInteractionKind.BedroomStoreDoor, exitRegion.Center, ExpandInteractionSize(exitRegion.Size), "按 E：回到店铺");
+            CreateInteractable(runtimeRoot, "BedTrigger", PrototypeSceneInteractionKind.Bed, chooseUiRegion.Center, ExpandInteractionSize(chooseUiRegion.Size), "按 E：结束今天");
+            CreateInteractable(runtimeRoot, "SupplyTableTrigger", PrototypeSceneInteractionKind.SupplyTable, supplyRegion.Center, ExpandInteractionSize(supplyRegion.Size), "按 E：购买材料");
         }
 
         private static void CreateStoreInteractables(Scene scene, Transform runtimeRoot)
@@ -524,28 +585,60 @@ namespace APlaceLikeMe.UI
                 return;
             }
 
-            var doorRegion = markerRegions
-                .OrderByDescending(region => region.Max.y)
-                .ThenBy(region => Mathf.Abs(region.Center.x))
-                .First();
-            var orderBoardRegions = markerRegions
+            var doorRegion = FindPreferredRegion(markerRegions, EnterBedroomMarkerName)
+                ?? markerRegions
+                    .OrderByDescending(region => region.Max.y)
+                    .ThenBy(region => Mathf.Abs(region.Center.x))
+                    .First();
+            var fixTableRegions = markerRegions
+                .Where(region => region.SourceName == FixTableMarkerName)
+                .OrderBy(region => region.Min.y)
+                .ThenBy(region => region.Min.x)
+                .ToList();
+            var phoneRegions = markerRegions
+                .Where(region => region.SourceName == PhoneMarkerName)
+                .OrderBy(region => region.Min.y)
+                .ThenBy(region => region.Min.x)
+                .ToList();
+            var interactionRegions = markerRegions
                 .Where(region => !region.Equals(doorRegion))
+                .Where(region => region.SourceName != FixTableMarkerName)
+                .Where(region => region.SourceName != PhoneMarkerName)
                 .OrderBy(region => region.Min.y)
                 .ThenBy(region => region.Min.x)
                 .ToList();
 
-            CreateInteractable(runtimeRoot, "BedroomDoorTrigger", PrototypeSceneInteractionKind.StoreBedroomDoor, doorRegion.Center, doorRegion.Size, "按 E：进入卧室");
-            for (var index = 0; index < orderBoardRegions.Count; index++)
+            CreateInteractable(runtimeRoot, "BedroomDoorTrigger", PrototypeSceneInteractionKind.StoreBedroomDoor, doorRegion.Center, ExpandInteractionSize(doorRegion.Size), "按 E：进入卧室");
+            for (var index = 0; index < fixTableRegions.Count; index++)
             {
-                var orderBoardRegion = orderBoardRegions[index];
-                CreateInteractable(runtimeRoot, $"OrderBoardTrigger_{index + 1}", PrototypeSceneInteractionKind.OrderBoard, orderBoardRegion.Center, orderBoardRegion.Size, "按 E：接订单");
+                var fixTableRegion = fixTableRegions[index];
+                CreateInteractable(runtimeRoot, $"RepairTableTrigger_{index + 1}", PrototypeSceneInteractionKind.RepairTable, fixTableRegion.Center, ExpandInteractionSize(fixTableRegion.Size), "按 E：打开修补台");
+            }
+
+            for (var index = 0; index < phoneRegions.Count; index++)
+            {
+                var phoneRegion = phoneRegions[index];
+                CreateInteractable(runtimeRoot, $"PhoneTrigger_{index + 1}", PrototypeSceneInteractionKind.Phone, phoneRegion.Center, ExpandInteractionSize(phoneRegion.Size), "按 E：打开订单");
+            }
+
+            for (var index = 0; index < interactionRegions.Count; index++)
+            {
+                var interactionRegion = interactionRegions[index];
+                if (interactionRegion.Center.y < 3f && interactionRegion.Center.x > -2f)
+                {
+                    CreateInteractable(runtimeRoot, $"RepairTableTrigger_{fixTableRegions.Count + index + 1}", PrototypeSceneInteractionKind.RepairTable, interactionRegion.Center, ExpandInteractionSize(interactionRegion.Size), "按 E：打开修补台");
+                    continue;
+                }
+
+                CreateInteractable(runtimeRoot, $"PhoneTrigger_{phoneRegions.Count + index + 1}", PrototypeSceneInteractionKind.Phone, interactionRegion.Center, ExpandInteractionSize(interactionRegion.Size), "按 E：打开订单");
             }
         }
 
         private static void CreateFallbackStoreInteractables(Transform runtimeRoot)
         {
             CreateInteractable(runtimeRoot, "BedroomDoorTrigger", PrototypeSceneInteractionKind.StoreBedroomDoor, new Vector2(-2.0f, 1.0f), new Vector2(3.4f, 2.2f), "按 E：进入卧室");
-            CreateInteractable(runtimeRoot, "OrderBoardTrigger", PrototypeSceneInteractionKind.OrderBoard, new Vector2(-4.0f, -2.6f), new Vector2(8.6f, 2.6f), "按 E：接订单");
+            CreateInteractable(runtimeRoot, "PhoneTrigger", PrototypeSceneInteractionKind.Phone, new Vector2(-6.5f, 2.5f), new Vector2(2.0f, 2.0f), "按 E：打开订单");
+            CreateInteractable(runtimeRoot, "RepairTableTrigger", PrototypeSceneInteractionKind.RepairTable, new Vector2(4.0f, -2.5f), new Vector2(6.0f, 2.0f), "按 E：打开修补台");
         }
 
         private static void CreateFallbackBedroomInteractables(Transform runtimeRoot)
@@ -575,6 +668,21 @@ namespace APlaceLikeMe.UI
             }
 
             return regions;
+        }
+
+        private static TilemapInteractionRegion? FindPreferredRegion(IEnumerable<TilemapInteractionRegion> regions, params string[] sourceNames)
+        {
+            var sourceNameSet = new HashSet<string>(sourceNames);
+            var matchingRegions = regions
+                .Where(region => sourceNameSet.Contains(region.SourceName))
+                .OrderByDescending(region => region.Size.x * region.Size.y)
+                .ToList();
+            return matchingRegions.Count == 0 ? null : matchingRegions[0];
+        }
+
+        private static Vector2 ExpandInteractionSize(Vector2 size)
+        {
+            return new Vector2(size.x + InteractionPadding * 2f, size.y + InteractionPadding * 2f);
         }
 
         private static List<TilemapInteractionRegion> FindConnectedTileRegions(Tilemap tilemap)
@@ -632,7 +740,7 @@ namespace APlaceLikeMe.UI
             var minY = cells.Min(cell => cell.y);
             var maxX = cells.Max(cell => cell.x);
             var maxY = cells.Max(cell => cell.y);
-            return CreateTilemapRegionFromCellBounds(tilemap, minX, minY, maxX, maxY);
+            return CreateTilemapRegionFromCellBounds(tilemap, minX, minY, maxX, maxY, tilemap.name);
         }
 
         private static Rect? CalculateTilemapBounds(Tilemap tilemap)
@@ -668,11 +776,11 @@ namespace APlaceLikeMe.UI
                 return null;
             }
 
-            var region = CreateTilemapRegionFromCellBounds(tilemap, minX, minY, maxX, maxY);
+            var region = CreateTilemapRegionFromCellBounds(tilemap, minX, minY, maxX, maxY, tilemap.name);
             return Rect.MinMaxRect(region.Min.x, region.Min.y, region.Max.x, region.Max.y);
         }
 
-        private static TilemapInteractionRegion CreateTilemapRegionFromCellBounds(Tilemap tilemap, int minX, int minY, int maxX, int maxY)
+        private static TilemapInteractionRegion CreateTilemapRegionFromCellBounds(Tilemap tilemap, int minX, int minY, int maxX, int maxY, string sourceName)
         {
             var minWorld = tilemap.CellToWorld(new Vector3Int(minX, minY, 0));
             var maxWorld = tilemap.CellToWorld(new Vector3Int(maxX + 1, maxY + 1, 0));
@@ -682,7 +790,7 @@ namespace APlaceLikeMe.UI
             size.x = Mathf.Max(1.0f, size.x);
             size.y = Mathf.Max(1.0f, size.y);
 
-            return new TilemapInteractionRegion(min, max, size);
+            return new TilemapInteractionRegion(min, max, size, sourceName);
         }
 
         private static bool IsInteractionMarkerTilemap(Tilemap tilemap)
@@ -801,18 +909,20 @@ namespace APlaceLikeMe.UI
 
         private readonly struct TilemapInteractionRegion
         {
-            public TilemapInteractionRegion(Vector2 min, Vector2 max, Vector2 size)
+            public TilemapInteractionRegion(Vector2 min, Vector2 max, Vector2 size, string sourceName)
             {
                 Min = min;
                 Max = max;
                 Center = (min + max) * 0.5f;
                 Size = size;
+                SourceName = sourceName;
             }
 
             public Vector2 Min { get; }
             public Vector2 Max { get; }
             public Vector2 Center { get; }
             public Vector2 Size { get; }
+            public string SourceName { get; }
         }
 
         private void SetRoomCamera(Scene roomScene)
@@ -889,29 +999,189 @@ namespace APlaceLikeMe.UI
 
         private void OpenInteractionScene(PrototypeInteractionPanelMode mode)
         {
+            OpenInteractionScene(InteractionSceneName, mode);
+        }
+
+        private void OpenInteractionScene(string sceneName, PrototypeInteractionPanelMode mode)
+        {
             pendingPanelMode = mode;
-            if (isInteractionSceneLoaded)
+            if (IsInteractionSceneLoaded())
             {
                 return;
             }
 
-            isInteractionSceneLoaded = true;
-            SceneManager.LoadSceneAsync(InteractionSceneName, LoadSceneMode.Additive);
+            loadedInteractionSceneName = sceneName;
+            StartCoroutine(LoadInteractionSceneRoutine(sceneName));
         }
 
         private void UnloadInteractionSceneIfLoaded()
         {
-            if (!isInteractionSceneLoaded)
+            if (!IsInteractionSceneLoaded())
             {
                 return;
             }
 
-            isInteractionSceneLoaded = false;
-            var scene = SceneManager.GetSceneByName(InteractionSceneName);
+            var sceneName = loadedInteractionSceneName;
+            loadedInteractionSceneName = null;
+            var scene = SceneManager.GetSceneByName(sceneName);
             if (scene.IsValid() && scene.isLoaded)
             {
                 SceneManager.UnloadSceneAsync(scene);
             }
+        }
+
+        private bool IsInteractionSceneLoaded()
+        {
+            return !string.IsNullOrEmpty(loadedInteractionSceneName);
+        }
+
+        private IEnumerator LoadInteractionSceneRoutine(string sceneName)
+        {
+            var loadOperation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+            while (loadOperation != null && !loadOperation.isDone)
+            {
+                yield return null;
+            }
+
+            var scene = SceneManager.GetSceneByName(sceneName);
+            if (scene.IsValid() && scene.isLoaded)
+            {
+                if (loadedInteractionSceneName == sceneName)
+                {
+                    DisableSceneCameras(scene);
+                    BindInteractionScene(scene, sceneName);
+                }
+                else
+                {
+                    SceneManager.UnloadSceneAsync(scene);
+                }
+            }
+        }
+
+        private static void DisableSceneCameras(Scene scene)
+        {
+            foreach (var rootObject in scene.GetRootGameObjects())
+            {
+                foreach (var camera in rootObject.GetComponentsInChildren<Camera>(true))
+                {
+                    camera.enabled = false;
+                }
+
+                foreach (var audioListener in rootObject.GetComponentsInChildren<AudioListener>(true))
+                {
+                    audioListener.enabled = false;
+                }
+            }
+        }
+
+        private void BindInteractionScene(Scene scene, string sceneName)
+        {
+            if (sceneName != ChooseUiSceneName)
+            {
+                return;
+            }
+
+            BindButton(scene, ChooseYesButtonName, GoNextDayFromPanel);
+            BindButton(scene, ChooseNoButtonName, CloseInteractionSceneFromPanel);
+        }
+
+        private static void BindButton(Scene scene, string objectName, UnityEngine.Events.UnityAction onClick)
+        {
+            var buttonObject = FindSceneObject(scene, objectName);
+            var button = buttonObject == null ? null : buttonObject.GetComponentInChildren<Button>(true);
+            if (button == null)
+            {
+                return;
+            }
+
+            button.onClick.AddListener(onClick);
+        }
+
+        private void BindSceneHud(Scene scene)
+        {
+            moneyHudText = null;
+            energyHudText = null;
+            timeHudText = null;
+
+            var canvasObject = FindSceneObject(scene, UiCanvasName);
+            if (canvasObject == null)
+            {
+                return;
+            }
+
+            moneyHudText = FindHudTextComponent(canvasObject, MoneyHudName);
+            energyHudText = FindHudTextComponent(canvasObject, EnergyHudName);
+            timeHudText = FindHudTextComponent(canvasObject, TimeHudName);
+            UpdateSceneHud();
+        }
+
+        private static Component FindHudTextComponent(GameObject canvasObject, string hudObjectName)
+        {
+            var hudObject = FindInChildren(canvasObject.transform, hudObjectName);
+            return hudObject == null ? null : FindWritableTextComponent(hudObject.gameObject);
+        }
+
+        private static Component FindWritableTextComponent(GameObject root)
+        {
+            foreach (var component in root.GetComponentsInChildren<Component>(true))
+            {
+                if (component == null || component is Transform)
+                {
+                    continue;
+                }
+
+                var textProperty = component.GetType().GetProperty("text");
+                if (textProperty != null && textProperty.PropertyType == typeof(string) && textProperty.CanWrite)
+                {
+                    return component;
+                }
+            }
+
+            return null;
+        }
+
+        private void UpdateSceneHud()
+        {
+            SetTextValue(moneyHudText, state.Coins.ToString());
+            SetTextValue(energyHudText, $"{state.Energy}/{Mathf.Max(1, state.DailyEnergyRecovery)}");
+            SetTextValue(timeHudText, GetCurrentTimeLabel());
+        }
+
+        private string GetCurrentTimeLabel()
+        {
+            if (state.Phase == GamePhase.DayEnd || state.Phase == GamePhase.NightSummary || state.Phase == GamePhase.MaterialPurchase)
+            {
+                return "晚上";
+            }
+
+            var todayCompletedCount = state.CompletedOrders.Count(order => order.DayCompleted == state.CurrentDay);
+            if (todayCompletedCount <= 0)
+            {
+                return "上午";
+            }
+
+            if (todayCompletedCount == 1)
+            {
+                return "午后";
+            }
+
+            return "快收店了";
+        }
+
+        private static void SetTextValue(Component component, string value)
+        {
+            if (component == null)
+            {
+                return;
+            }
+
+            var textProperty = component.GetType().GetProperty("text");
+            if (textProperty == null || textProperty.PropertyType != typeof(string) || !textProperty.CanWrite)
+            {
+                return;
+            }
+
+            textProperty.SetValue(component, value, null);
         }
 
         private void ShowConfirmation(string message, string yesLabel, string noLabel, System.Action onYes, System.Action onNo)
@@ -960,14 +1230,7 @@ namespace APlaceLikeMe.UI
 
         private void Render()
         {
-            if (titleText == null || resourceText == null || statusText == null)
-            {
-                return;
-            }
-
-            titleText.text = $"《不完美的小店》{GetRoomDisplayName()}  Day {state.CurrentDay} / {config.PrototypeDays}";
-            resourceText.text = $"金币 {state.Coins}    能量 {state.Energy}    真实度 {state.Authenticity} ({FormatSigned(state.TodayAuthenticityDelta)})\n材料：{FormatMaterials()}";
-            statusText.text = FormatStatus();
+            UpdateSceneHud();
             UpdateInteractionHint();
         }
 
@@ -996,19 +1259,6 @@ namespace APlaceLikeMe.UI
                 : "WASD / 方向键移动，靠近床、材料桌或门按 E";
         }
 
-        private string FormatStatus()
-        {
-            var phaseText = state.Phase switch
-            {
-                GamePhase.OrderSelection when currentRoom == RoomMode.Store => "白天营业：蓝色工作台接订单，双门进入卧室。",
-                GamePhase.OrderSelection => "卧室：床结束当天，桌子购买材料，门回店铺。",
-                GamePhase.DayEnd => "原型完成：这间小店暂时打烊。",
-                _ => "小店准备中。"
-            };
-
-            return $"{phaseText}\n移动：WASD / 方向键    互动：E";
-        }
-
         private string FormatMaterials()
         {
             if (state.MaterialStock.Count == 0)
@@ -1017,11 +1267,6 @@ namespace APlaceLikeMe.UI
             }
 
             return string.Join(" / ", state.MaterialStock.Select(pair => $"{pair.Key.DisplayName} x{pair.Value}"));
-        }
-
-        private string GetRoomDisplayName()
-        {
-            return currentRoom == RoomMode.Store ? "店铺" : "卧室";
         }
 
         private static string GetSceneName(RoomMode room)
@@ -1117,25 +1362,8 @@ namespace APlaceLikeMe.UI
 
             var root = CreatePanel(canvas.transform, "HudRoot", new Vector2(0, 0), new Vector2(1, 1));
 
-            var header = CreateOverlayCard(root, "Header", new Vector2(0.02f, 0.83f), new Vector2(0.48f, 0.98f));
-            titleText = CreateText(header, "Title", 25, FontStyle.Bold, PrototypeUiTheme.Ink);
-            PlaceFull(titleText.GetComponent<RectTransform>(), new RectOffset(16, 16, 10, 64));
-            statusText = CreateText(header, "Status", 17, FontStyle.Normal, PrototypeUiTheme.InkMuted);
-            PlaceFull(statusText.GetComponent<RectTransform>(), new RectOffset(16, 16, 54, 10));
-
-            var resources = CreateOverlayCard(root, "Resources", new Vector2(0.52f, 0.86f), new Vector2(0.98f, 0.98f));
-            resourceText = CreateText(resources, "ResourceText", 18, FontStyle.Bold, PrototypeUiTheme.Ink);
-            PlaceFull(resourceText.GetComponent<RectTransform>(), new RectOffset(16, 16, 12, 12));
-
-            var hint = CreateOverlayCard(root, "InteractionHint", new Vector2(0.24f, 0.02f), new Vector2(0.76f, 0.09f));
-            interactionHintText = CreateText(hint, "HintText", 19, FontStyle.Bold, PrototypeUiTheme.Ink);
-            interactionHintText.alignment = TextAnchor.MiddleCenter;
-            PlaceFull(interactionHintText.GetComponent<RectTransform>(), new RectOffset(12, 12, 6, 6));
-
-            var feedback = CreateOverlayCard(root, "Feedback", new Vector2(0.02f, 0.10f), new Vector2(0.58f, 0.19f));
-            feedbackText = CreateText(feedback, "FeedbackText", 18, FontStyle.Normal, PrototypeUiTheme.InkMuted);
-            feedbackText.alignment = TextAnchor.MiddleLeft;
-            PlaceFull(feedbackText.GetComponent<RectTransform>(), new RectOffset(14, 14, 8, 8));
+            interactionHintText = CreateHiddenText(root, "HiddenInteractionHint");
+            feedbackText = CreateHiddenText(root, "HiddenFeedback");
 
             BuildConfirmationOverlay(canvas);
         }
@@ -1284,6 +1512,13 @@ namespace APlaceLikeMe.UI
             text.font = GetDefaultFont();
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Overflow;
+            return text;
+        }
+
+        private static Text CreateHiddenText(Transform parent, string name)
+        {
+            var text = CreateText(parent, name, 1, FontStyle.Normal, Color.clear);
+            text.gameObject.SetActive(false);
             return text;
         }
 

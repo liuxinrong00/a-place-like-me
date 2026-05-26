@@ -6,6 +6,8 @@ namespace APlaceLikeMe.UI
         BedroomStoreDoor,
         Bed,
         SupplyTable,
-        OrderBoard
+        OrderBoard,
+        Phone,
+        RepairTable
     }
 }
