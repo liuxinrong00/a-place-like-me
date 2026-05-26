@@ -39,6 +39,7 @@ namespace APlaceLikeMe.UI
         private const string TimeHudName = "Time";
         private const string ChooseYesButtonName = "Yes";
         private const string ChooseNoButtonName = "No";
+        private const int DailyOrderOfferCount = 6;
         private const float InteractionPadding = 0.65f;
         private const string RuntimeRootName = "PrototypeRuntime";
         private const string PlayerObjectName = "LXR";
@@ -201,6 +202,13 @@ namespace APlaceLikeMe.UI
             return $"材料购买\n完成订单：{todayCompletedCount}\n当日收入：{state.TodayIncome}\n真实度变化：{FormatSigned(state.TodayAuthenticityDelta)}\n顾客反馈：\n{feedback}\n\n当前材料：\n{FormatMaterials()}\n\n选择材料后可以用金币购买补充。";
         }
 
+        public OrderResult TryAcceptOrderFromPanel(OrderDefinition order)
+        {
+            var result = orderService.TryAcceptOrder(state, order);
+            Render();
+            return result;
+        }
+
         public OrderResult TryCompleteOrderFromPanel(OrderDefinition order, RepairMethodDefinition repairMethod)
         {
             var result = orderService.TryCompleteOrder(state, order, repairMethod);
@@ -248,7 +256,7 @@ namespace APlaceLikeMe.UI
         private void StartDay()
         {
             state.SetPhase(GamePhase.OrderSelection);
-            var orders = orderService.GetOrdersForDay(config.OrderPool, state.CurrentDay, config.OrdersPerDay);
+            var orders = orderService.GetOrdersForDay(config.OrderPool, state.CurrentDay, DailyOrderOfferCount);
             state.SetTodaysOrders(orders);
             UnloadInteractionSceneIfLoaded();
             feedbackText.text = $"第 {state.CurrentDay} 天开店。到蓝色工作台接订单，门可以进入卧室。";
@@ -277,8 +285,8 @@ namespace APlaceLikeMe.UI
                     SwitchRoom(RoomMode.Bedroom, EnterStoreMarkerName, EnterStoreRoomMarkerName);
                     break;
                 case PrototypeSceneInteractionKind.BedroomStoreDoor:
-                    feedbackText.text = "你回到了店铺。";
-                    SwitchRoom(RoomMode.Store, EnterBedroomMarkerName);
+                    feedbackText.text = "已经到晚上了，先睡到明天再回店铺。";
+                    OpenInteractionScene(ChooseUiSceneName, PrototypeInteractionPanelMode.NightSummary);
                     break;
                 case PrototypeSceneInteractionKind.Bed:
                     TryUseBed();
@@ -340,12 +348,11 @@ namespace APlaceLikeMe.UI
                 return;
             }
 
-            var orders = orderService.GetOrdersForDay(config.OrderPool, state.CurrentDay + 1, config.OrdersPerDay);
+            var orders = orderService.GetOrdersForDay(config.OrderPool, state.CurrentDay + 1, DailyOrderOfferCount);
             state.StartNextDay(orders);
             UnloadInteractionSceneIfLoaded();
-            feedbackText.text = $"第 {state.CurrentDay} 天早上。能量已恢复，从卧室门回店铺继续接订单。";
-            var wakeSpawn = currentPlayer == null ? BedroomWakeSpawn : (Vector2)currentPlayer.position;
-            SwitchRoom(RoomMode.Bedroom, wakeSpawn);
+            feedbackText.text = $"第 {state.CurrentDay} 天早上。能量已恢复，回到店铺继续接订单。";
+            SwitchRoom(RoomMode.Store, EnterBedroomMarkerName);
             Render();
         }
 
@@ -572,7 +579,7 @@ namespace APlaceLikeMe.UI
                 .ThenByDescending(region => region.Center.y)
                 .First();
 
-            CreateInteractable(runtimeRoot, "StoreDoorTrigger", PrototypeSceneInteractionKind.BedroomStoreDoor, exitRegion.Center, ExpandInteractionSize(exitRegion.Size), "按 E：回到店铺");
+            CreateInteractable(runtimeRoot, "StoreDoorTrigger", PrototypeSceneInteractionKind.BedroomStoreDoor, exitRegion.Center, ExpandInteractionSize(exitRegion.Size), "按 E：睡到明天后回店铺");
             CreateInteractable(runtimeRoot, "BedTrigger", PrototypeSceneInteractionKind.Bed, chooseUiRegion.Center, ExpandInteractionSize(chooseUiRegion.Size), "按 E：结束今天");
             CreateInteractable(runtimeRoot, "SupplyTableTrigger", PrototypeSceneInteractionKind.SupplyTable, supplyRegion.Center, ExpandInteractionSize(supplyRegion.Size), "按 E：购买材料");
         }
@@ -644,7 +651,7 @@ namespace APlaceLikeMe.UI
 
         private static void CreateFallbackBedroomInteractables(Transform runtimeRoot)
         {
-            CreateInteractable(runtimeRoot, "StoreDoorTrigger", PrototypeSceneInteractionKind.BedroomStoreDoor, new Vector2(-3.0f, -7.0f), new Vector2(4.5f, 1.6f), "按 E：回到店铺");
+            CreateInteractable(runtimeRoot, "StoreDoorTrigger", PrototypeSceneInteractionKind.BedroomStoreDoor, new Vector2(-3.0f, -7.0f), new Vector2(4.5f, 1.6f), "按 E：睡到明天后回店铺");
             CreateInteractable(runtimeRoot, "BedTrigger", PrototypeSceneInteractionKind.Bed, new Vector2(-6.0f, 1.9f), new Vector2(3.0f, 2.4f), "按 E：结束今天");
             CreateInteractable(runtimeRoot, "SupplyTableTrigger", PrototypeSceneInteractionKind.SupplyTable, new Vector2(2.5f, -3.0f), new Vector2(8.8f, 3.2f), "按 E：购买材料");
         }
@@ -1077,6 +1084,17 @@ namespace APlaceLikeMe.UI
 
         private void BindInteractionScene(Scene scene, string sceneName)
         {
+            if (sceneName == OrderSceneName || sceneName == FixSceneName || sceneName == BuySceneName)
+            {
+                var rootObject = scene.GetRootGameObjects().FirstOrDefault();
+                if (rootObject != null && rootObject.GetComponent<PrototypeStaticInteractionSceneController>() == null)
+                {
+                    rootObject.AddComponent<PrototypeStaticInteractionSceneController>().Configure(sceneName, this);
+                }
+
+                return;
+            }
+
             if (sceneName != ChooseUiSceneName)
             {
                 return;

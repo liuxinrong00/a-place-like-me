@@ -20,6 +20,21 @@ namespace APlaceLikeMe.Gameplay
                 .ToList();
         }
 
+        public OrderResult TryAcceptOrder(GameSessionState state, OrderDefinition order)
+        {
+            if (order == null)
+            {
+                return new OrderResult(false, "请选择一个订单。");
+            }
+
+            if (!state.AcceptOrder(order))
+            {
+                return new OrderResult(false, "这个订单今天不可接取。");
+            }
+
+            return new OrderResult(true, $"已接受订单：{order.DisplayName}");
+        }
+
         public OrderResult TryCompleteOrder(GameSessionState state, OrderDefinition order, RepairMethodDefinition repairMethod)
         {
             if (order == null)
@@ -32,9 +47,9 @@ namespace APlaceLikeMe.Gameplay
                 return new OrderResult(false, "请选择一种修补方式。");
             }
 
-            if (!state.TodaysOrders.Contains(order))
+            if (!state.AcceptedOrders.Contains(order))
             {
-                return new OrderResult(false, "这个订单今天不可处理。");
+                return new OrderResult(false, "请先接受这个订单。");
             }
 
             var energyCost = GetFinalEnergyCost(order, repairMethod);

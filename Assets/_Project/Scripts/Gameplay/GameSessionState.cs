@@ -8,6 +8,7 @@ namespace APlaceLikeMe.Gameplay
     {
         private readonly Dictionary<MaterialDefinition, int> materialStock = new();
         private readonly List<OrderDefinition> todaysOrders = new();
+        private readonly List<OrderDefinition> acceptedOrders = new();
         private readonly List<CompletedOrderRecord> completedOrders = new();
         private readonly List<string> feedbackLog = new();
 
@@ -20,6 +21,7 @@ namespace APlaceLikeMe.Gameplay
         public int TodayAuthenticityDelta { get; private set; }
         public GamePhase Phase { get; private set; } = GamePhase.Boot;
         public IReadOnlyList<OrderDefinition> TodaysOrders => todaysOrders;
+        public IReadOnlyList<OrderDefinition> AcceptedOrders => acceptedOrders;
         public IReadOnlyList<CompletedOrderRecord> CompletedOrders => completedOrders;
         public IReadOnlyList<string> FeedbackLog => feedbackLog;
         public IReadOnlyDictionary<MaterialDefinition, int> MaterialStock => materialStock;
@@ -47,6 +49,7 @@ namespace APlaceLikeMe.Gameplay
             }
 
             todaysOrders.Clear();
+            acceptedOrders.Clear();
             completedOrders.Clear();
             feedbackLog.Clear();
         }
@@ -60,8 +63,24 @@ namespace APlaceLikeMe.Gameplay
         {
             todaysOrders.Clear();
             todaysOrders.AddRange(orders);
+            acceptedOrders.Clear();
             TodayIncome = 0;
             TodayAuthenticityDelta = 0;
+        }
+
+        public bool AcceptOrder(OrderDefinition order)
+        {
+            if (order == null || !todaysOrders.Remove(order))
+            {
+                return false;
+            }
+
+            if (!acceptedOrders.Contains(order))
+            {
+                acceptedOrders.Add(order);
+            }
+
+            return true;
         }
 
         public bool HasMaterial(MaterialDefinition material, int amount)
@@ -133,6 +152,7 @@ namespace APlaceLikeMe.Gameplay
         public void CompleteOrder(OrderDefinition order, string feedbackText = null)
         {
             todaysOrders.Remove(order);
+            acceptedOrders.Remove(order);
             completedOrders.Add(new CompletedOrderRecord(order, CurrentDay));
             var finalFeedbackText = string.IsNullOrWhiteSpace(feedbackText) ? order.FeedbackText : feedbackText;
             if (!string.IsNullOrWhiteSpace(finalFeedbackText))
