@@ -58,7 +58,7 @@ namespace APlaceLikeMe.Gameplay
                 return new OrderResult(false, "能量不足，今天需要留一点力气。");
             }
 
-            var requiredMaterials = MergeRequiredMaterials(order);
+            var requiredMaterials = MergeRequiredMaterials(order, repairMethod);
             foreach (var requiredMaterial in requiredMaterials)
             {
                 if (!state.HasMaterial(requiredMaterial.Key, requiredMaterial.Value))
@@ -73,13 +73,14 @@ namespace APlaceLikeMe.Gameplay
             }
 
             var rewardCoins = GetFinalRewardCoins(order, repairMethod);
+            var materialCost = GetFinalMaterialCost(order, repairMethod);
             var authenticityDelta = GetFinalAuthenticityDelta(order, repairMethod);
             state.SpendEnergy(energyCost);
             state.AddCoins(rewardCoins);
             state.AddAuthenticity(authenticityDelta);
             var feedback = GetMethodFeedback(order, repairMethod, authenticityDelta);
             state.CompleteOrder(order, feedback);
-            return new OrderResult(true, $"完成订单：{order.DisplayName}\n方式：{repairMethod.DisplayName}\n收入 +{rewardCoins}，真实度 {FormatSigned(authenticityDelta)}\n{feedback}");
+            return new OrderResult(true, $"完成订单：{order.DisplayName}\n方式：{repairMethod.DisplayName}\n收入 +{rewardCoins}，净收益 {rewardCoins - materialCost}，真实度 {FormatSigned(authenticityDelta)}\n{feedback}");
         }
 
         public OrderResult TryBuyNightSupply(GameSessionState state, MaterialDefinition material, int cost, int amount)
@@ -105,6 +106,12 @@ namespace APlaceLikeMe.Gameplay
                 return 0;
             }
 
+            var profile = GetRepairProfile(order, repairMethod);
+            if (profile != null)
+            {
+                return MathfMax(1, profile.energyCost);
+            }
+
             return MathfMax(1, order.EnergyCost + repairMethod.EnergyModifier);
         }
 
@@ -115,7 +122,30 @@ namespace APlaceLikeMe.Gameplay
                 return 0;
             }
 
+            var profile = GetRepairProfile(order, repairMethod);
+            if (profile != null)
+            {
+                return MathfMax(1, profile.rewardCoins);
+            }
+
             return MathfMax(1, order.RewardCoins + repairMethod.CoinRewardModifier + GetCustomerPreferenceCoinBonus(order, repairMethod));
+        }
+
+        public int GetFinalMaterialCost(OrderDefinition order, RepairMethodDefinition repairMethod)
+        {
+            if (order == null || repairMethod == null)
+            {
+                return 0;
+            }
+
+            var profile = GetRepairProfile(order, repairMethod);
+            if (profile != null)
+            {
+                return profile.materialCost;
+            }
+
+            return MergeRequiredMaterials(order, repairMethod)
+                .Sum(material => material.Key.DefaultPrice * material.Value);
         }
 
         public int GetFinalAuthenticityDelta(OrderDefinition order, RepairMethodDefinition repairMethod)
@@ -128,10 +158,27 @@ namespace APlaceLikeMe.Gameplay
             return repairMethod.AuthenticityModifier + GetCustomerPreferenceAuthenticityBonus(order, repairMethod);
         }
 
-        private static Dictionary<MaterialDefinition, int> MergeRequiredMaterials(OrderDefinition order)
+        public IReadOnlyDictionary<MaterialDefinition, int> GetRequiredMaterials(OrderDefinition order, RepairMethodDefinition repairMethod)
+        {
+            return MergeRequiredMaterials(order, repairMethod);
+        }
+
+        private static RepairMethodMaterialProfile GetRepairProfile(OrderDefinition order, RepairMethodDefinition repairMethod)
+        {
+            if (order == null || repairMethod == null)
+            {
+                return null;
+            }
+
+            return order.RepairProfiles.FirstOrDefault(profile => profile != null && profile.repairMethodType == repairMethod.RepairMethodType);
+        }
+
+        private static Dictionary<MaterialDefinition, int> MergeRequiredMaterials(OrderDefinition order, RepairMethodDefinition repairMethod)
         {
             var requiredMaterials = new Dictionary<MaterialDefinition, int>();
-            foreach (var requiredMaterial in order.RequiredMaterials)
+            var profile = GetRepairProfile(order, repairMethod);
+            var sourceMaterials = profile?.requiredMaterials ?? order.RequiredMaterials;
+            foreach (var requiredMaterial in sourceMaterials)
             {
                 if (requiredMaterial.material == null || requiredMaterial.amount <= 0)
                 {

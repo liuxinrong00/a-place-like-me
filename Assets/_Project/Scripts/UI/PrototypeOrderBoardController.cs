@@ -81,7 +81,7 @@ namespace APlaceLikeMe.UI
         private void TryRepairSelectedOrder()
         {
             var result = host.TryCompleteOrderFromPanel(selectedOrder, selectedRepairMethod);
-            feedbackMessage = result.Message;
+            feedbackMessage = result.Succeeded ? string.Empty : result.Message;
             if (result.Succeeded)
             {
                 selectedOrder = host.State.TodaysOrders.FirstOrDefault();
@@ -166,9 +166,10 @@ namespace APlaceLikeMe.UI
             buySupplyButton.interactable = selectedSupplyMaterial != null;
             decreaseSupplyCountButton.interactable = selectedSupplyPurchaseCount > 1;
             increaseSupplyCountButton.interactable = selectedSupplyPurchaseCount < 10;
-            purchaseCountText.text = $"{selectedSupplyPurchaseCount}/10";
-            var purchaseAmount = selectedSupplyPurchaseCount * Mathf.Max(1, host.Config.NightSupplyAmount);
-            var purchaseCost = selectedSupplyPurchaseCount * Mathf.Max(1, host.Config.NightSupplyCost);
+            var purchaseAmount = selectedSupplyPurchaseCount;
+            var maxPurchaseAmount = 10;
+            var purchaseCost = selectedSupplyMaterial == null ? 0 : selectedSupplyMaterial.DefaultPrice * purchaseAmount;
+            purchaseCountText.text = $"{purchaseAmount}/{maxPurchaseAmount}";
             buySupplyButton.GetComponentInChildren<Text>().text = selectedSupplyMaterial == null
                 ? "购买"
                 : $"购买：{selectedSupplyMaterial.DisplayName} +{purchaseAmount} / {purchaseCost} 金币";
@@ -211,7 +212,7 @@ namespace APlaceLikeMe.UI
                     Render();
                 }, false, 17, 92, 0, false);
                 button.interactable = host.State.Phase == GamePhase.OrderSelection;
-                SetButtonColor(button, repairMethod == selectedRepairMethod ? PrototypeUiTheme.CardSelected : PrototypeUiTheme.PaperMuted);
+                SetButtonColor(button, repairMethod == selectedRepairMethod ? PrototypeUiTheme.ListItemSelected : PrototypeUiTheme.ListItem);
                 repairMethodButtons.Add(button);
             }
         }
@@ -224,15 +225,16 @@ namespace APlaceLikeMe.UI
             }
 
             supplyButtons.Clear();
-            foreach (var material in host.State.MaterialStock.Keys)
+            foreach (var material in GetAvailableMaterials())
             {
-                var button = CreateButton(supplyRoot, material.DisplayName, () =>
+                host.State.MaterialStock.TryGetValue(material, out var currentAmount);
+                var button = CreateButton(supplyRoot, $"{material.DisplayName}\n库存 {currentAmount} · 单价 {material.DefaultPrice}", () =>
                 {
                     selectedSupplyMaterial = material;
                     Render();
                 });
                 button.interactable = host.State.Phase != GamePhase.DayEnd;
-                SetButtonColor(button, material == selectedSupplyMaterial ? PrototypeUiTheme.CardSelected : PrototypeUiTheme.Card);
+                SetButtonColor(button, material == selectedSupplyMaterial ? PrototypeUiTheme.ListItemSelected : PrototypeUiTheme.ListItem);
                 supplyButtons.Add(button);
             }
         }
@@ -241,10 +243,10 @@ namespace APlaceLikeMe.UI
         {
             if (order == selectedOrder)
             {
-                return PrototypeUiTheme.CardSelected;
+                return PrototypeUiTheme.ListItemSelected;
             }
 
-            return CanRepairOrder(order) ? PrototypeUiTheme.PaperMuted : PrototypeUiTheme.CardUnavailable;
+            return CanRepairOrder(order) ? PrototypeUiTheme.ListItem : PrototypeUiTheme.CardUnavailable;
         }
 
         private bool CanRepairOrder(OrderDefinition order)
@@ -259,9 +261,9 @@ namespace APlaceLikeMe.UI
                 return false;
             }
 
-            foreach (var requiredMaterial in order.RequiredMaterials)
+            foreach (var requiredMaterial in host.OrderService.GetRequiredMaterials(order, selectedRepairMethod))
             {
-                if (requiredMaterial.material != null && !host.State.HasMaterial(requiredMaterial.material, requiredMaterial.amount))
+                if (requiredMaterial.Key != null && !host.State.HasMaterial(requiredMaterial.Key, requiredMaterial.Value))
                 {
                     return false;
                 }
@@ -273,7 +275,8 @@ namespace APlaceLikeMe.UI
         private string FormatOrderButton(OrderDefinition order)
         {
             var customerName = order.Customer == null ? "未知顾客" : order.Customer.DisplayName;
-            return $"{order.DisplayName}\n{customerName} · {order.RewardCoins} 金币 · {GetOrderStatusText(order)}";
+            var rewardCoins = selectedRepairMethod == null ? order.RewardCoins : host.OrderService.GetFinalRewardCoins(order, selectedRepairMethod);
+            return $"{FormatDifficulty(order.Difficulty)} · {order.DisplayName}\n{customerName} · {rewardCoins} 金币 · {GetOrderStatusText(order)}";
         }
 
         private string GetOrderStatusText(OrderDefinition order)
@@ -288,25 +291,26 @@ namespace APlaceLikeMe.UI
                 return "能量不足";
             }
 
-            foreach (var requiredMaterial in order.RequiredMaterials)
+            foreach (var requiredMaterial in host.OrderService.GetRequiredMaterials(order, selectedRepairMethod))
             {
-                if (requiredMaterial.material != null && !host.State.HasMaterial(requiredMaterial.material, requiredMaterial.amount))
+                if (requiredMaterial.Key != null && !host.State.HasMaterial(requiredMaterial.Key, requiredMaterial.Value))
                 {
-                    return $"缺{requiredMaterial.material.DisplayName}";
+                    return $"缺{requiredMaterial.Key.DisplayName}";
                 }
             }
 
             return "可修补";
         }
 
-        private static string FormatOrderDetail(OrderDefinition order, GameSessionState state)
+        private string FormatOrderDetail(OrderDefinition order, GameSessionState state)
         {
-            var materialText = order.RequiredMaterials.Count == 0
+            var requiredMaterials = host.OrderService.GetRequiredMaterials(order, selectedRepairMethod);
+            var materialText = requiredMaterials.Count == 0
                 ? "无"
-                : string.Join(" / ", order.RequiredMaterials.Select(material =>
+                : string.Join(" / ", requiredMaterials.Select(material =>
                 {
-                    var label = $"{material.material.DisplayName} x{material.amount}";
-                    if (material.material != null && !state.HasMaterial(material.material, material.amount))
+                    var label = $"{material.Key.DisplayName} x{material.Value}";
+                    if (material.Key != null && !state.HasMaterial(material.Key, material.Value))
                     {
                         return $"<color=#803020>{label}</color>";
                     }
@@ -315,20 +319,53 @@ namespace APlaceLikeMe.UI
                 }));
             var customerName = order.Customer == null ? "未知顾客" : order.Customer.DisplayName;
             var customerType = order.Customer == null ? "未知" : FormatCustomerType(order.Customer.CustomerType);
-            return $"订单：{order.DisplayName}\n物品：{order.ItemType}\n损坏：{order.DamageLevel}\n顾客：{customerName} / {customerType}\n需要：{materialText}\n基础能量：{order.EnergyCost}\n基础报酬：{order.RewardCoins}\n备注：{order.CustomerNote}";
+            return $"订单：{order.DisplayName}\n难度：{FormatDifficulty(order.Difficulty)}\n物品：{order.ItemType}\n损坏：{order.DamageLevel}\n顾客：{customerName} / {customerType}\n需要：{materialText}\n基础能量：{order.EnergyCost}\n基础报酬：{order.RewardCoins}\n备注：{order.CustomerNote}";
         }
 
         private string FormatRepairPreview(OrderDefinition order, RepairMethodDefinition repairMethod)
         {
             var energyCost = host.OrderService.GetFinalEnergyCost(order, repairMethod);
+            var materialCost = host.OrderService.GetFinalMaterialCost(order, repairMethod);
             var rewardCoins = host.OrderService.GetFinalRewardCoins(order, repairMethod);
             var authenticityDelta = host.OrderService.GetFinalAuthenticityDelta(order, repairMethod);
-            return $"修补方式：{repairMethod.DisplayName}\n{repairMethod.Description}\n\n预计消耗能量：{energyCost}\n预计收入：{rewardCoins}\n预计真实度：{FormatSigned(authenticityDelta)}";
+            return $"修补方式：{repairMethod.DisplayName}\n{repairMethod.Description}\n\n预计消耗能量：{energyCost}\n材料成本：{materialCost}\n预计收入：{rewardCoins}\n净收益：{rewardCoins - materialCost}\n预计真实度：{FormatSigned(authenticityDelta)}";
         }
 
-        private static string FormatRepairMethodButton(RepairMethodDefinition repairMethod)
+        private string FormatRepairMethodButton(RepairMethodDefinition repairMethod)
         {
-            return $"{repairMethod.DisplayName}\n能量 {FormatSigned(repairMethod.EnergyModifier)} / 金币 {FormatSigned(repairMethod.CoinRewardModifier)} / 真实 {FormatSigned(repairMethod.AuthenticityModifier)}";
+            if (selectedOrder == null)
+            {
+                return repairMethod.DisplayName;
+            }
+
+            var energyCost = host.OrderService.GetFinalEnergyCost(selectedOrder, repairMethod);
+            var rewardCoins = host.OrderService.GetFinalRewardCoins(selectedOrder, repairMethod);
+            var materialCost = host.OrderService.GetFinalMaterialCost(selectedOrder, repairMethod);
+            return $"{repairMethod.DisplayName}\n能量 {energyCost} / 收入 {rewardCoins} / 净 {rewardCoins - materialCost}";
+        }
+
+        private IEnumerable<MaterialDefinition> GetAvailableMaterials()
+        {
+            return host.Config.OrderPool
+                .Where(order => order != null)
+                .SelectMany(order => order.RepairProfiles)
+                .Where(profile => profile != null)
+                .SelectMany(profile => profile.requiredMaterials)
+                .Select(required => required.material)
+                .Where(material => material != null)
+                .Concat(host.State.MaterialStock.Keys)
+                .Distinct();
+        }
+
+        private static string FormatDifficulty(OrderDifficulty difficulty)
+        {
+            return difficulty switch
+            {
+                OrderDifficulty.Easy => "简单",
+                OrderDifficulty.Normal => "普通",
+                OrderDifficulty.Hard => "困难",
+                _ => "普通"
+            };
         }
 
         private static string FormatCustomerType(CustomerType customerType)
@@ -717,7 +754,9 @@ namespace APlaceLikeMe.UI
             image.color = color;
             var colors = button.colors;
             colors.normalColor = color;
-            colors.highlightedColor = PrototypeUiTheme.CardSelected;
+            colors.highlightedColor = PrototypeUiTheme.ListItemHover;
+            colors.pressedColor = PrototypeUiTheme.ListItemSelected;
+            colors.selectedColor = PrototypeUiTheme.ListItemSelected;
             button.colors = colors;
         }
 

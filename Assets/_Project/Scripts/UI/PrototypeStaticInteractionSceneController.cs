@@ -21,6 +21,7 @@ namespace APlaceLikeMe.UI
         private const string LastButtonName = "LastButton";
         private const string NextButtonName = "NextButton";
         private const string ScrollbarName = "Scrollbar";
+        private const string DangerTextColor = "#803020";
         private const int VisibleRows = 3;
         private const int MaxPurchaseCount = 10;
 
@@ -203,11 +204,15 @@ namespace APlaceLikeMe.UI
         private void RepairSelectedOrder()
         {
             var result = host.TryCompleteOrderFromPanel(selectedOrder, selectedRepairMethod);
-            statusMessage = result.Message;
+            statusMessage = result.Succeeded ? string.Empty : FormatStatusMessage(result.Message);
             var orders = host.State.AcceptedOrders;
             orderPageIndex = Mathf.Clamp(orderPageIndex, 0, GetMaxPage(orders.Count));
             selectedOrder = orders.Skip(orderPageIndex * VisibleRows).FirstOrDefault() ?? orders.FirstOrDefault();
             RenderFixScene();
+            if (result.Succeeded)
+            {
+                host.ShowRepairResultFromPanel(result.Message);
+            }
         }
 
         private void BuySelectedMaterial()
@@ -303,10 +308,18 @@ namespace APlaceLikeMe.UI
 
             RenderOrderList(orders);
             RenderRepairMethods();
-            detailText.text = selectedOrder == null
-                ? "还没有已接受订单。先到接单界面接受订单。"
-                : FormatFixDetail(selectedOrder, selectedRepairMethod);
-            statusText.text = statusMessage;
+            if (selectedOrder == null)
+            {
+                detailText.text = "还没有已接受订单。先到接单界面接受订单。";
+                detailText.alignment = TextAnchor.MiddleCenter;
+                statusText.text = string.Empty;
+            }
+            else
+            {
+                detailText.text = FormatFixDetail(selectedOrder, selectedRepairMethod);
+                detailText.alignment = TextAnchor.UpperLeft;
+                statusText.text = statusMessage;
+            }
 
             if (acceptButton != null)
             {
@@ -331,7 +344,7 @@ namespace APlaceLikeMe.UI
             UpdatePurchaseControls();
 
             detailText.text = FormatBuySummary();
-            statusText.text = statusMessage;
+            statusText.text = selectedMaterial == null ? string.Empty : statusMessage;
 
             if (acceptButton != null)
             {
@@ -407,7 +420,7 @@ namespace APlaceLikeMe.UI
         {
             if (purchaseCountText != null)
             {
-                purchaseCountText.text = $"{purchaseCount}/{MaxPurchaseCount}";
+                purchaseCountText.text = $"{GetPurchaseAmount(purchaseCount)}/{MaxPurchaseCount}";
             }
 
             if (lastButton != null)
@@ -448,9 +461,11 @@ namespace APlaceLikeMe.UI
             {
                 AddMaterials(materials, host.Config.OrderPool
                     .Where(order => order != null)
-                    .SelectMany(order => order.RequiredMaterials)
-                    .Where(material => material.material != null)
-                    .Select(material => material.material));
+                    .SelectMany(order => order.RepairProfiles)
+                    .Where(profile => profile != null)
+                    .SelectMany(profile => profile.requiredMaterials)
+                    .Where(required => required.material != null)
+                    .Select(required => required.material));
             }
 
             return materials;
@@ -503,7 +518,8 @@ namespace APlaceLikeMe.UI
             AddLayout(repairMethodRoot.gameObject, 196, 0f);
             AddVerticalLayout(repairMethodRoot, 10);
             statusText = CreateRuntimeText(infoContentRoot, "Status", 19, FontStyle.Bold);
-            AddLayout(statusText.gameObject, 52, 0f);
+            statusText.alignment = TextAnchor.LowerLeft;
+            AddLayout(statusText.gameObject, 64, 0f);
         }
 
         private void BuildBuyInfoLayout()
@@ -511,10 +527,13 @@ namespace APlaceLikeMe.UI
             var infoObject = FindSceneObject(OrderInformationName);
             infoContentRoot = CreateRuntimeRoot(infoObject, "RuntimeBuyInfo", new Vector2(0.08f, 0.12f), new Vector2(0.92f, 0.78f));
             AddVerticalLayout(infoContentRoot, 12);
-            detailText = CreateRuntimeText(infoContentRoot, "Detail", 22, FontStyle.Normal);
+            detailText = CreateRuntimeText(infoContentRoot, "Detail", 20, FontStyle.Normal);
+            detailText.lineSpacing = 0.92f;
+            detailText.verticalOverflow = VerticalWrapMode.Truncate;
             AddLayout(detailText.gameObject, 0, 1f);
             statusText = CreateRuntimeText(infoContentRoot, "Status", 20, FontStyle.Bold);
-            AddLayout(statusText.gameObject, 58, 0f);
+            statusText.alignment = TextAnchor.LowerLeft;
+            AddLayout(statusText.gameObject, 78, 0f);
         }
 
         private RectTransform CreateRuntimeRoot(GameObject parentObject, string name, Vector2 anchorMin, Vector2 anchorMax)
@@ -557,16 +576,16 @@ namespace APlaceLikeMe.UI
             var buttonObject = new GameObject("RuntimeButton", typeof(RectTransform), typeof(Image), typeof(Button));
             buttonObject.transform.SetParent(parent, false);
             var image = buttonObject.GetComponent<Image>();
-            image.color = PrototypeUiTheme.Card;
+            image.color = PrototypeUiTheme.ListItem;
 
             var button = buttonObject.GetComponent<Button>();
             button.targetGraphic = image;
             button.onClick.AddListener(onClick);
             var colors = button.colors;
-            colors.normalColor = PrototypeUiTheme.Card;
-            colors.highlightedColor = PrototypeUiTheme.PrimaryHover;
-            colors.pressedColor = PrototypeUiTheme.PaperMuted;
-            colors.selectedColor = PrototypeUiTheme.CardSelected;
+            colors.normalColor = PrototypeUiTheme.ListItem;
+            colors.highlightedColor = PrototypeUiTheme.ListItemHover;
+            colors.pressedColor = PrototypeUiTheme.ListItemSelected;
+            colors.selectedColor = PrototypeUiTheme.ListItemSelected;
             colors.disabledColor = PrototypeUiTheme.CardUnavailable;
             button.colors = colors;
 
@@ -635,7 +654,7 @@ namespace APlaceLikeMe.UI
             var image = button.GetComponent<Image>();
             if (image != null)
             {
-                image.color = selected ? PrototypeUiTheme.CardSelected : PrototypeUiTheme.Card;
+                image.color = selected ? PrototypeUiTheme.ListItemSelected : PrototypeUiTheme.ListItem;
             }
         }
 
@@ -735,7 +754,7 @@ namespace APlaceLikeMe.UI
         private string FormatOrderButton(OrderDefinition order)
         {
             var customerName = order.Customer == null ? "未知顾客" : order.Customer.DisplayName;
-            return $"{order.DisplayName}\n{customerName} / {order.RewardCoins} 金币 / 能量 {order.EnergyCost}";
+            return $"{FormatDifficulty(order.Difficulty)} · {order.DisplayName}\n{customerName} / {GetDefaultReward(order)} 金币 / 能量 {GetDefaultEnergy(order)}";
         }
 
         private string FormatOrderDetail(OrderDefinition order)
@@ -743,25 +762,28 @@ namespace APlaceLikeMe.UI
             var customerName = order.Customer == null ? "未知顾客" : order.Customer.DisplayName;
             var customerType = order.Customer == null ? "未知" : FormatCustomerType(order.Customer.CustomerType);
             var requiredMaterials = FormatRequiredMaterials(order);
-            return $"订单：{order.DisplayName}\n物品：{order.ItemType}\n损坏：{order.DamageLevel}\n顾客：{customerName} / {customerType}\n需要材料：{requiredMaterials}\n基础能量：{order.EnergyCost}\n基础报酬：{order.RewardCoins}\n备注：{order.CustomerNote}";
+            return $"订单：{order.DisplayName}\n难度：{FormatDifficulty(order.Difficulty)}\n物品：{order.ItemType}\n损坏：{order.DamageLevel}\n顾客：{customerName} / {customerType}\n需要材料：{requiredMaterials}\n基础能量：{GetDefaultEnergy(order)}\n基础报酬：{GetDefaultReward(order)}\n备注：{order.CustomerNote}";
         }
 
         private string FormatRequiredMaterials(OrderDefinition order)
         {
-            if (order.RequiredMaterials.Count == 0)
+            var requiredMaterials = GetSelectedRequiredMaterials(order);
+            if (requiredMaterials.Count == 0)
             {
                 return "无";
             }
 
-            return string.Join(" / ", order.RequiredMaterials.Select(material =>
+            return string.Join(" / ", requiredMaterials.Select(material =>
             {
-                if (material.material == null)
+                if (material.Key == null)
                 {
                     return string.Empty;
                 }
 
-                var label = $"{material.material.DisplayName} x{material.amount}";
-                return host.State.HasMaterial(material.material, material.amount) ? label : $"{label}（不足）";
+                var label = $"{material.Key.DisplayName} x{material.Value}";
+                return host.State.HasMaterial(material.Key, material.Value)
+                    ? label
+                    : ColorDanger($"{label}（不足）");
             }).Where(text => !string.IsNullOrWhiteSpace(text)));
         }
 
@@ -773,23 +795,33 @@ namespace APlaceLikeMe.UI
             }
 
             var energyCost = host.OrderService.GetFinalEnergyCost(order, repairMethod);
+            var materialCost = host.OrderService.GetFinalMaterialCost(order, repairMethod);
             var rewardCoins = host.OrderService.GetFinalRewardCoins(order, repairMethod);
             var authenticityDelta = host.OrderService.GetFinalAuthenticityDelta(order, repairMethod);
-            return $"修补方式：{repairMethod.DisplayName}\n{repairMethod.Description}\n预计消耗：{energyCost} 能量\n预计收入：{rewardCoins} 金币\n真实度：{FormatSigned(authenticityDelta)}";
+            return $"修补方式：{repairMethod.DisplayName}\n{repairMethod.Description}\n预计消耗：{energyCost} 能量\n材料成本：{materialCost} 金币\n预计收入：{rewardCoins} 金币\n净收益：{rewardCoins - materialCost} 金币\n真实度：{FormatSigned(authenticityDelta)}";
         }
 
         private string FormatFixDetail(OrderDefinition order, RepairMethodDefinition repairMethod)
         {
             var methodName = repairMethod == null ? "未选择" : repairMethod.DisplayName;
             var energyCost = repairMethod == null ? order.EnergyCost : host.OrderService.GetFinalEnergyCost(order, repairMethod);
+            var materialCost = repairMethod == null ? 0 : host.OrderService.GetFinalMaterialCost(order, repairMethod);
             var rewardCoins = repairMethod == null ? order.RewardCoins : host.OrderService.GetFinalRewardCoins(order, repairMethod);
             var authenticityDelta = repairMethod == null ? 0 : host.OrderService.GetFinalAuthenticityDelta(order, repairMethod);
-            return $"订单：{order.DisplayName}\n损坏：{order.DamageLevel}\n需要材料：{FormatRequiredMaterials(order)}\n当前方式：{methodName}\n预计消耗：{energyCost} 能量\n预计收入：{rewardCoins} 金币\n真实度：{FormatSigned(authenticityDelta)}";
+            return $"订单：{order.DisplayName}\n损坏：{order.DamageLevel}\n需要材料：{FormatRequiredMaterials(order)}\n当前方式：{methodName}\n预计消耗：{energyCost} 能量\n材料成本：{materialCost} 金币\n预计收入：{rewardCoins} 金币\n净收益：{rewardCoins - materialCost} 金币\n真实度：{FormatSigned(authenticityDelta)}";
         }
 
-        private static string FormatRepairMethodButton(RepairMethodDefinition repairMethod)
+        private string FormatRepairMethodButton(RepairMethodDefinition repairMethod)
         {
-            return $"{repairMethod.DisplayName}\n能量 {FormatSigned(repairMethod.EnergyModifier)} / 金币 {FormatSigned(repairMethod.CoinRewardModifier)} / 真实 {FormatSigned(repairMethod.AuthenticityModifier)}";
+            if (selectedOrder == null)
+            {
+                return repairMethod.DisplayName;
+            }
+
+            var energyCost = host.OrderService.GetFinalEnergyCost(selectedOrder, repairMethod);
+            var rewardCoins = host.OrderService.GetFinalRewardCoins(selectedOrder, repairMethod);
+            var materialCost = host.OrderService.GetFinalMaterialCost(selectedOrder, repairMethod);
+            return $"{repairMethod.DisplayName}\n能量 {energyCost} / 收入 {rewardCoins} / 净 {rewardCoins - materialCost}";
         }
 
         private string FormatMaterialButton(MaterialDefinition material)
@@ -808,7 +840,7 @@ namespace APlaceLikeMe.UI
             var materialText = selectedMaterial == null
                 ? "未选择"
                 : $"{selectedMaterial.DisplayName} +{purchaseAmount} / {purchaseCost} 金币";
-            return $"今日状态\n第 {host.State.CurrentDay} 天\n金币：{host.State.Coins}\n能量：{host.State.Energy}/{host.State.DailyEnergyRecovery}\n完成订单：{completedCount}\n当日收入：{host.State.TodayIncome}\n真实度变化：{FormatSigned(host.State.TodayAuthenticityDelta)}\n\n购买内容\n{materialText}\n\n当前材料\n{FormatCurrentMaterials()}";
+            return $"今日状态\n{FormatDayLabel(host.State.CurrentDay)}\n金币：{host.State.Coins}\n能量：{host.State.Energy}/{host.State.DailyEnergyRecovery}\n完成订单：{completedCount}\n当日收入：{host.State.TodayIncome}\n当日支出：{host.State.TodayExpenses}\n真实度变化：{FormatSigned(host.State.TodayAuthenticityDelta)}\n\n购买内容\n{materialText}\n\n当前材料\n{FormatCurrentMaterials()}";
         }
 
         private string FormatCurrentMaterials()
@@ -823,12 +855,63 @@ namespace APlaceLikeMe.UI
 
         private int GetPurchaseAmount(int count)
         {
-            return Mathf.Max(1, host.Config.NightSupplyAmount) * Mathf.Clamp(count, 1, MaxPurchaseCount);
+            return Mathf.Clamp(count, 1, MaxPurchaseCount);
         }
 
         private int GetPurchaseCost(int count)
         {
-            return Mathf.Max(1, host.Config.NightSupplyCost) * Mathf.Clamp(count, 1, MaxPurchaseCount);
+            return selectedMaterial == null ? 0 : selectedMaterial.DefaultPrice * GetPurchaseAmount(count);
+        }
+
+        private IReadOnlyDictionary<MaterialDefinition, int> GetSelectedRequiredMaterials(OrderDefinition order)
+        {
+            return host.OrderService.GetRequiredMaterials(order, selectedRepairMethod);
+        }
+
+        private int GetDefaultEnergy(OrderDefinition order)
+        {
+            var repairMethod = selectedRepairMethod ?? host.Config.RepairMethods.FirstOrDefault();
+            return repairMethod == null ? order.EnergyCost : host.OrderService.GetFinalEnergyCost(order, repairMethod);
+        }
+
+        private int GetDefaultReward(OrderDefinition order)
+        {
+            var repairMethod = selectedRepairMethod ?? host.Config.RepairMethods.FirstOrDefault();
+            return repairMethod == null ? order.RewardCoins : host.OrderService.GetFinalRewardCoins(order, repairMethod);
+        }
+
+        private static string FormatDayLabel(int day)
+        {
+            return day switch
+            {
+                1 => "第一天",
+                2 => "第二天",
+                3 => "第三天",
+                _ => $"第{day}天"
+            };
+        }
+
+        private static string FormatDifficulty(OrderDifficulty difficulty)
+        {
+            return difficulty switch
+            {
+                OrderDifficulty.Easy => "简单",
+                OrderDifficulty.Normal => "普通",
+                OrderDifficulty.Hard => "困难",
+                _ => "普通"
+            };
+        }
+
+        private static string FormatStatusMessage(string message)
+        {
+            return string.IsNullOrWhiteSpace(message) || !message.StartsWith("材料不足")
+                ? message
+                : ColorDanger(message);
+        }
+
+        private static string ColorDanger(string text)
+        {
+            return $"<color={DangerTextColor}>{text}</color>";
         }
 
         private static int GetMaxPage(int itemCount)

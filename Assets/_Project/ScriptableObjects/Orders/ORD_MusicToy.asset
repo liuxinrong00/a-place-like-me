@@ -16,13 +16,64 @@ MonoBehaviour:
   displayName: 发条音乐玩具
   itemType: 发条玩具
   damageLevel: 齿轮卡住
+  difficulty: 2
   customer: {fileID: 11400000, guid: 2982773a6fa5b2c57b96b162854e6926, type: 2}
   requiredMaterials:
-  - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
-    amount: 2
   - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 4
+  - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
     amount: 1
-  energyCost: 3
-  rewardCoins: 14
+  - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+    amount: 2
+  - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 2
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 4
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 2
+    materialCost: 72
+    energyCost: 52
+    rewardCoins: 108
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 3
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 2
+    materialCost: 51
+    energyCost: 40
+    rewardCoins: 90
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 2
+    materialCost: 76
+    energyCost: 45
+    rewardCoins: 99
+  energyCost: 52
+  rewardCoins: 108
   customerNote: 它不必唱准，只要能转起来就很好。
   feedbackText: 收藏家听见断断续续的旋律，反而笑了。

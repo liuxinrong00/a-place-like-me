@@ -16,13 +16,54 @@ MonoBehaviour:
   displayName: 松动矮凳
   itemType: ??
   damageLevel: 凳腿松动
+  difficulty: 1
   customer: {fileID: 11400000, guid: 978395341244b7470d4ff3e14a1eb880, type: 2}
   requiredMaterials:
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 3
   - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
     amount: 1
-  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
-    amount: 1
-  energyCost: 2
-  rewardCoins: 9
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 2
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 3
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 2
+    materialCost: 37
+    energyCost: 32
+    rewardCoins: 66
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 24
+    energyCost: 25
+    rewardCoins: 55
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 41
+    energyCost: 28
+    rewardCoins: 61
+  energyCost: 32
+  rewardCoins: 66
   customerNote: 店门口那只猫也爱坐这个凳子。
   feedbackText: 邻居笑着说，猫会第一个验收。

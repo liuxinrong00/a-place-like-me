@@ -16,13 +16,44 @@ MonoBehaviour:
   displayName: 裂纹茶杯
   itemType: ???
   damageLevel: 杯口细裂
+  difficulty: 0
   customer: {fileID: 11400000, guid: 978395341244b7470d4ff3e14a1eb880, type: 2}
   requiredMaterials:
   - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
-    amount: 1
+    amount: 2
   - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
     amount: 1
-  energyCost: 2
-  rewardCoins: 8
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 16
+    energyCost: 20
+    rewardCoins: 36
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 11
+    energyCost: 15
+    rewardCoins: 30
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 19
+    energyCost: 18
+    rewardCoins: 33
+  energyCost: 20
+  rewardCoins: 36
   customerNote: 它每天早上都陪我喝茶，能再用就好。
   feedbackText: 邻居说，杯子还是熟悉的重量。

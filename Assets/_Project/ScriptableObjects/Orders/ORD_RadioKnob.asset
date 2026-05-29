@@ -16,13 +16,54 @@ MonoBehaviour:
   displayName: 收音机旋钮
   itemType: ???
   damageLevel: 旋钮缺失
+  difficulty: 1
   customer: {fileID: 11400000, guid: a1bb1c5c324d7fa4d4eccd9a972010eb, type: 2}
   requiredMaterials:
-  - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
-    amount: 1
   - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 3
+  - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
     amount: 1
-  energyCost: 2
-  rewardCoins: 12
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 2
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 3
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 2
+    materialCost: 37
+    energyCost: 32
+    rewardCoins: 66
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 24
+    energyCost: 25
+    rewardCoins: 55
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 41
+    energyCost: 28
+    rewardCoins: 61
+  energyCost: 32
+  rewardCoins: 66
   customerNote: 外观可以不一样，但手感要顺。
   feedbackText: 学生拧了两圈，说声音像从房间角落回来。

@@ -15,4 +15,4 @@ MonoBehaviour:
   id: pigment
   displayName: 颜料
   description: 用来补色、做旧和保留痕迹。
-  defaultPrice: 3
+  defaultPrice: 6

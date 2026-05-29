@@ -15,4 +15,4 @@ MonoBehaviour:
   id: old_parts
   displayName: 旧零件
   description: 从旧电器里拆出的可用零件。
-  defaultPrice: 5
+  defaultPrice: 12

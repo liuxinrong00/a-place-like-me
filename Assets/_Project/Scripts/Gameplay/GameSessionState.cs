@@ -18,6 +18,7 @@ namespace APlaceLikeMe.Gameplay
         public int Authenticity { get; private set; }
         public int DailyEnergyRecovery { get; private set; }
         public int TodayIncome { get; private set; }
+        public int TodayExpenses { get; private set; }
         public int TodayAuthenticityDelta { get; private set; }
         public GamePhase Phase { get; private set; } = GamePhase.Boot;
         public IReadOnlyList<OrderDefinition> TodaysOrders => todaysOrders;
@@ -34,6 +35,7 @@ namespace APlaceLikeMe.Gameplay
             Authenticity = config.InitialAuthenticity;
             DailyEnergyRecovery = config.DailyEnergyRecovery;
             TodayIncome = 0;
+            TodayExpenses = 0;
             TodayAuthenticityDelta = 0;
             Phase = GamePhase.Boot;
 
@@ -65,6 +67,7 @@ namespace APlaceLikeMe.Gameplay
             todaysOrders.AddRange(orders);
             acceptedOrders.Clear();
             TodayIncome = 0;
+            TodayExpenses = 0;
             TodayAuthenticityDelta = 0;
         }
 
@@ -139,8 +142,19 @@ namespace APlaceLikeMe.Gameplay
                 return false;
             }
 
-            Coins -= amount;
+            SpendCoins(amount);
             return true;
+        }
+
+        public void SpendCoins(int amount)
+        {
+            if (amount <= 0)
+            {
+                return;
+            }
+
+            Coins -= amount;
+            TodayExpenses += amount;
         }
 
         public void AddAuthenticity(int amount)
@@ -166,6 +180,7 @@ namespace APlaceLikeMe.Gameplay
             CurrentDay++;
             Energy = DailyEnergyRecovery;
             TodayIncome = 0;
+            TodayExpenses = 0;
             TodayAuthenticityDelta = 0;
             feedbackLog.Clear();
             SetTodaysOrders(orders);

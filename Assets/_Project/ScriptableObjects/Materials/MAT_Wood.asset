@@ -15,4 +15,4 @@ MonoBehaviour:
   id: wood
   displayName: 木片
   description: 小块旧木料，适合加固木制家具和玩具。
-  defaultPrice: 4
+  defaultPrice: 10

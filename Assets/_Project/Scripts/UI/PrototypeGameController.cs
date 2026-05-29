@@ -28,6 +28,8 @@ namespace APlaceLikeMe.UI
         private const string FixSceneName = "Fix";
         private const string BuySceneName = "Buy";
         private const string ChooseUiSceneName = "ChooseUIScene";
+        private const string RepairResultSceneName = "ShoopingInformation";
+        private const string BedMarkerName = "Bed";
         private const string FixTableMarkerName = "FixTable";
         private const string PhoneMarkerName = "Phone";
         private const string EnterBedroomMarkerName = "EnterBedRoom";
@@ -39,8 +41,11 @@ namespace APlaceLikeMe.UI
         private const string TimeHudName = "Time";
         private const string ChooseYesButtonName = "Yes";
         private const string ChooseNoButtonName = "No";
-        private const int DailyOrderOfferCount = 6;
+        private const string CloseButtonName = "CloseButton";
+        private const int DailyLivingCost = 20;
+        private const int ThirdDayExtraCost = 100;
         private const float InteractionPadding = 0.65f;
+        private const float BedWakeSpawnPadding = 1.25f;
         private const string RuntimeRootName = "PrototypeRuntime";
         private const string PlayerObjectName = "LXR";
         private const string LegacyPlayerObjectName = "Player";
@@ -63,7 +68,7 @@ namespace APlaceLikeMe.UI
         private static readonly Vector2 StoreSpawn = StoreCarpetSpawn;
         private static readonly Vector2 StoreFromBedroomSpawn = StoreCarpetSpawn;
         private static readonly Vector2 BedroomFromStoreSpawn = new(-3.0f, -6.4f);
-        private static readonly Vector2 BedroomWakeSpawn = new(-6.0f, 0.8f);
+        private static readonly Vector2 BedroomWakeSpawn = new(-2.5f, 2.25f);
         private static readonly Rect StoreMovementBounds = Rect.MinMaxRect(-21.5f, -5.4f, 9.5f, 7.2f);
         private static readonly Rect BedroomMovementBounds = Rect.MinMaxRect(-14.5f, -7.6f, 9.5f, 6.5f);
         private static readonly Rect StoreCameraBounds = Rect.MinMaxRect(-22.0f, -6.0f, 10.0f, 7.2f);
@@ -85,7 +90,10 @@ namespace APlaceLikeMe.UI
         private Rect currentCameraBounds = StoreCameraBounds;
         private PrototypeInteractionPanelMode pendingPanelMode = PrototypeInteractionPanelMode.Orders;
         private string loadedInteractionSceneName;
+        private string loadedOverlaySceneName;
+        private string pendingRepairResultMessage;
         private bool suppressNextInteractInput;
+        private bool canReturnToStoreAfterRest;
         private bool isRoomSwitching;
         private bool hasStartupRoomOverride;
         private RoomMode startupRoomOverride = RoomMode.Store;
@@ -105,7 +113,7 @@ namespace APlaceLikeMe.UI
         public OrderService OrderService => orderService;
         public PrototypeGameConfig Config => config;
         public PrototypeInteractionPanelMode PendingPanelMode => pendingPanelMode;
-        public bool AreWorldControlsLocked => isRoomSwitching || IsInteractionSceneLoaded() || IsConfirmationOpen();
+        public bool AreWorldControlsLocked => isRoomSwitching || IsInteractionSceneLoaded() || IsOverlaySceneLoaded() || IsConfirmationOpen();
 
         private void Awake()
         {
@@ -140,6 +148,16 @@ namespace APlaceLikeMe.UI
         {
             if (isRoomSwitching || IsConfirmationOpen())
             {
+                return;
+            }
+
+            if (IsOverlaySceneLoaded())
+            {
+                if (Input.GetKeyDown(KeyCode.Escape))
+                {
+                    CloseOverlaySceneFromPanel();
+                }
+
                 return;
             }
 
@@ -199,7 +217,7 @@ namespace APlaceLikeMe.UI
         {
             var todayCompletedCount = state.CompletedOrders.Count(order => order.DayCompleted == state.CurrentDay);
             var feedback = state.FeedbackLog.Count == 0 ? "今天还没有顾客反馈。" : string.Join("\n", state.FeedbackLog);
-            return $"材料购买\n完成订单：{todayCompletedCount}\n当日收入：{state.TodayIncome}\n真实度变化：{FormatSigned(state.TodayAuthenticityDelta)}\n顾客反馈：\n{feedback}\n\n当前材料：\n{FormatMaterials()}\n\n选择材料后可以用金币购买补充。";
+            return $"材料购买\n完成订单：{todayCompletedCount}\n当日收入：{state.TodayIncome}\n当日支出：{state.TodayExpenses}\n真实度变化：{FormatSigned(state.TodayAuthenticityDelta)}\n顾客反馈：\n{feedback}\n\n当前材料：\n{FormatMaterials()}\n\n选择材料后可以用金币购买补充。";
         }
 
         public OrderResult TryAcceptOrderFromPanel(OrderDefinition order)
@@ -216,12 +234,17 @@ namespace APlaceLikeMe.UI
             return result;
         }
 
+        public void ShowRepairResultFromPanel(string resultMessage)
+        {
+            pendingRepairResultMessage = resultMessage;
+            OpenOverlayScene(RepairResultSceneName);
+        }
+
         public OrderResult TryBuySupplyFromPanel(MaterialDefinition material, int purchaseCount)
         {
             var clampedCount = Mathf.Clamp(purchaseCount, 1, 10);
-            var costPerBatch = config == null ? 1 : Mathf.Max(1, config.NightSupplyCost);
-            var amountPerBatch = config == null ? 1 : Mathf.Max(1, config.NightSupplyAmount);
-            var result = orderService.TryBuyNightSupply(state, material, costPerBatch * clampedCount, amountPerBatch * clampedCount);
+            var cost = material == null ? 0 : Mathf.Max(1, material.DefaultPrice) * clampedCount;
+            var result = orderService.TryBuyNightSupply(state, material, cost, clampedCount);
             Render();
             return result;
         }
@@ -235,6 +258,13 @@ namespace APlaceLikeMe.UI
         {
             suppressNextInteractInput = true;
             UnloadInteractionSceneIfLoaded();
+            Render();
+        }
+
+        public void CloseOverlaySceneFromPanel()
+        {
+            suppressNextInteractInput = true;
+            UnloadOverlaySceneIfLoaded();
             Render();
         }
 
@@ -255,8 +285,9 @@ namespace APlaceLikeMe.UI
 
         private void StartDay()
         {
+            canReturnToStoreAfterRest = false;
             state.SetPhase(GamePhase.OrderSelection);
-            var orders = orderService.GetOrdersForDay(config.OrderPool, state.CurrentDay, DailyOrderOfferCount);
+            var orders = orderService.GetOrdersForDay(config.OrderPool, state.CurrentDay, config.OrdersPerDay);
             state.SetTodaysOrders(orders);
             UnloadInteractionSceneIfLoaded();
             feedbackText.text = $"第 {state.CurrentDay} 天开店。到蓝色工作台接订单，门可以进入卧室。";
@@ -285,7 +316,15 @@ namespace APlaceLikeMe.UI
                     SwitchRoom(RoomMode.Bedroom, EnterStoreMarkerName, EnterStoreRoomMarkerName);
                     break;
                 case PrototypeSceneInteractionKind.BedroomStoreDoor:
-                    feedbackText.text = "已经到晚上了，先睡到明天再回店铺。";
+                    if (canReturnToStoreAfterRest)
+                    {
+                        canReturnToStoreAfterRest = false;
+                        feedbackText.text = $"{FormatDayLabel(state.CurrentDay)}开店啦。";
+                        SwitchRoom(RoomMode.Store, EnterBedroomMarkerName);
+                        break;
+                    }
+
+                    feedbackText.text = "需要休息到明天才能开店哦";
                     OpenInteractionScene(ChooseUiSceneName, PrototypeInteractionPanelMode.NightSummary);
                     break;
                 case PrototypeSceneInteractionKind.Bed:
@@ -327,6 +366,13 @@ namespace APlaceLikeMe.UI
 
         private void TryUseBed()
         {
+            if (canReturnToStoreAfterRest)
+            {
+                feedbackText.text = "已经休息好了，先去开店吧。";
+                Render();
+                return;
+            }
+
             if (state.Phase == GamePhase.DayEnd)
             {
                 feedbackText.text = "原型流程已经结束。";
@@ -348,11 +394,14 @@ namespace APlaceLikeMe.UI
                 return;
             }
 
-            var orders = orderService.GetOrdersForDay(config.OrderPool, state.CurrentDay + 1, DailyOrderOfferCount);
+            var orders = orderService.GetOrdersForDay(config.OrderPool, state.CurrentDay + 1, config.OrdersPerDay);
+            var livingCost = GetLivingCostForNextDay(state.CurrentDay + 1);
             state.StartNextDay(orders);
+            state.SpendCoins(livingCost);
+            canReturnToStoreAfterRest = true;
             UnloadInteractionSceneIfLoaded();
-            feedbackText.text = $"第 {state.CurrentDay} 天早上。能量已恢复，回到店铺继续接订单。";
-            SwitchRoom(RoomMode.Store, EnterBedroomMarkerName);
+            feedbackText.text = $"{FormatDayLabel(state.CurrentDay)}早上。扣除生活费 {livingCost} 元，能量已恢复。";
+            SwitchRoom(RoomMode.Bedroom, BedroomWakeSpawn, new[] { BedMarkerName });
             Render();
         }
 
@@ -438,7 +487,17 @@ namespace APlaceLikeMe.UI
 
             var markerRegion = FindPreferredRegion(FindInteractionMarkerRegions(targetScene), roomSpawnMarkerNames);
             roomSpawnMarkerNames = null;
-            return markerRegion?.Center ?? fallbackSpawn;
+            if (!markerRegion.HasValue)
+            {
+                return fallbackSpawn;
+            }
+
+            if (markerRegion.Value.SourceName == BedMarkerName)
+            {
+                return new Vector2(markerRegion.Value.Center.x, markerRegion.Value.Min.y - BedWakeSpawnPadding);
+            }
+
+            return markerRegion.Value.Center;
         }
 
         private void SetupRoomScene(Scene scene, RoomMode room, Vector2 spawnPosition)
@@ -500,6 +559,12 @@ namespace APlaceLikeMe.UI
             RemoveLegacyPlayer(scene, playerObject);
 
             playerObject.transform.position = new Vector3(spawnPosition.x, spawnPosition.y, playerObject.transform.position.z);
+            var playerRigidbody = playerObject.GetComponent<Rigidbody2D>();
+            if (playerRigidbody != null)
+            {
+                playerRigidbody.position = spawnPosition;
+            }
+
             ConfigurePlayerMovement(playerObject, currentMovementBounds);
             currentPlayer = playerObject.transform;
         }
@@ -579,7 +644,7 @@ namespace APlaceLikeMe.UI
                 .ThenByDescending(region => region.Center.y)
                 .First();
 
-            CreateInteractable(runtimeRoot, "StoreDoorTrigger", PrototypeSceneInteractionKind.BedroomStoreDoor, exitRegion.Center, ExpandInteractionSize(exitRegion.Size), "按 E：睡到明天后回店铺");
+            CreateInteractable(runtimeRoot, "StoreDoorTrigger", PrototypeSceneInteractionKind.BedroomStoreDoor, exitRegion.Center, ExpandInteractionSize(exitRegion.Size), "需要休息到明天才能开店哦");
             CreateInteractable(runtimeRoot, "BedTrigger", PrototypeSceneInteractionKind.Bed, chooseUiRegion.Center, ExpandInteractionSize(chooseUiRegion.Size), "按 E：结束今天");
             CreateInteractable(runtimeRoot, "SupplyTableTrigger", PrototypeSceneInteractionKind.SupplyTable, supplyRegion.Center, ExpandInteractionSize(supplyRegion.Size), "按 E：购买材料");
         }
@@ -651,7 +716,7 @@ namespace APlaceLikeMe.UI
 
         private static void CreateFallbackBedroomInteractables(Transform runtimeRoot)
         {
-            CreateInteractable(runtimeRoot, "StoreDoorTrigger", PrototypeSceneInteractionKind.BedroomStoreDoor, new Vector2(-3.0f, -7.0f), new Vector2(4.5f, 1.6f), "按 E：睡到明天后回店铺");
+            CreateInteractable(runtimeRoot, "StoreDoorTrigger", PrototypeSceneInteractionKind.BedroomStoreDoor, new Vector2(-3.0f, -7.0f), new Vector2(4.5f, 1.6f), "需要休息到明天才能开店哦");
             CreateInteractable(runtimeRoot, "BedTrigger", PrototypeSceneInteractionKind.Bed, new Vector2(-6.0f, 1.9f), new Vector2(3.0f, 2.4f), "按 E：结束今天");
             CreateInteractable(runtimeRoot, "SupplyTableTrigger", PrototypeSceneInteractionKind.SupplyTable, new Vector2(2.5f, -3.0f), new Vector2(8.8f, 3.2f), "按 E：购买材料");
         }
@@ -1022,12 +1087,25 @@ namespace APlaceLikeMe.UI
             StartCoroutine(LoadInteractionSceneRoutine(sceneName));
         }
 
+        private void OpenOverlayScene(string sceneName)
+        {
+            if (IsOverlaySceneLoaded())
+            {
+                return;
+            }
+
+            loadedOverlaySceneName = sceneName;
+            StartCoroutine(LoadOverlaySceneRoutine(sceneName));
+        }
+
         private void UnloadInteractionSceneIfLoaded()
         {
             if (!IsInteractionSceneLoaded())
             {
                 return;
             }
+
+            UnloadOverlaySceneIfLoaded();
 
             var sceneName = loadedInteractionSceneName;
             loadedInteractionSceneName = null;
@@ -1041,6 +1119,27 @@ namespace APlaceLikeMe.UI
         private bool IsInteractionSceneLoaded()
         {
             return !string.IsNullOrEmpty(loadedInteractionSceneName);
+        }
+
+        private void UnloadOverlaySceneIfLoaded()
+        {
+            if (!IsOverlaySceneLoaded())
+            {
+                return;
+            }
+
+            var sceneName = loadedOverlaySceneName;
+            loadedOverlaySceneName = null;
+            var scene = SceneManager.GetSceneByName(sceneName);
+            if (scene.IsValid() && scene.isLoaded)
+            {
+                SceneManager.UnloadSceneAsync(scene);
+            }
+        }
+
+        private bool IsOverlaySceneLoaded()
+        {
+            return !string.IsNullOrEmpty(loadedOverlaySceneName);
         }
 
         private IEnumerator LoadInteractionSceneRoutine(string sceneName)
@@ -1057,7 +1156,32 @@ namespace APlaceLikeMe.UI
                 if (loadedInteractionSceneName == sceneName)
                 {
                     DisableSceneCameras(scene);
+                    EnsureInteractionUiInput(scene);
                     BindInteractionScene(scene, sceneName);
+                }
+                else
+                {
+                    SceneManager.UnloadSceneAsync(scene);
+                }
+            }
+        }
+
+        private IEnumerator LoadOverlaySceneRoutine(string sceneName)
+        {
+            var loadOperation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+            while (loadOperation != null && !loadOperation.isDone)
+            {
+                yield return null;
+            }
+
+            var scene = SceneManager.GetSceneByName(sceneName);
+            if (scene.IsValid() && scene.isLoaded)
+            {
+                if (loadedOverlaySceneName == sceneName)
+                {
+                    DisableSceneCameras(scene);
+                    EnsureInteractionUiInput(scene, 60);
+                    BindOverlayScene(scene, sceneName);
                 }
                 else
                 {
@@ -1082,6 +1206,40 @@ namespace APlaceLikeMe.UI
             }
         }
 
+        private static void EnsureInteractionUiInput(Scene scene, int sortingOrder = 40)
+        {
+            foreach (var rootObject in scene.GetRootGameObjects())
+            {
+                foreach (var canvas in rootObject.GetComponentsInChildren<Canvas>(true))
+                {
+                    canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                    canvas.overrideSorting = true;
+                    canvas.sortingOrder = sortingOrder;
+
+                    var rectTransform = canvas.GetComponent<RectTransform>();
+                    if (rectTransform != null && rectTransform.localScale == Vector3.zero)
+                    {
+                        rectTransform.localScale = Vector3.one;
+                    }
+
+                    if (canvas.GetComponent<GraphicRaycaster>() == null)
+                    {
+                        canvas.gameObject.AddComponent<GraphicRaycaster>();
+                    }
+                }
+
+                foreach (var image in rootObject.GetComponentsInChildren<Image>(true))
+                {
+                    if (image.color.a <= 0.01f && image.GetComponent<Selectable>() == null)
+                    {
+                        image.raycastTarget = false;
+                    }
+                }
+            }
+
+            EnsureEventSystem();
+        }
+
         private void BindInteractionScene(Scene scene, string sceneName)
         {
             if (sceneName == OrderSceneName || sceneName == FixSceneName || sceneName == BuySceneName)
@@ -1100,8 +1258,64 @@ namespace APlaceLikeMe.UI
                 return;
             }
 
+            BindChooseSceneText(scene);
             BindButton(scene, ChooseYesButtonName, GoNextDayFromPanel);
             BindButton(scene, ChooseNoButtonName, CloseInteractionSceneFromPanel);
+        }
+
+        private static void BindChooseSceneText(Scene scene)
+        {
+            var messageText = scene.GetRootGameObjects()
+                .SelectMany(rootObject => rootObject.GetComponentsInChildren<Text>(true))
+                .FirstOrDefault(text => text.GetComponentInParent<Button>(true) == null);
+
+            if (messageText == null)
+            {
+                return;
+            }
+
+            messageText.text = "需要休息到明天才能开店哦";
+        }
+
+        private void BindOverlayScene(Scene scene, string sceneName)
+        {
+            if (sceneName != RepairResultSceneName)
+            {
+                return;
+            }
+
+            BindButton(scene, CloseButtonName, CloseOverlaySceneFromPanel);
+            BindRepairResultText(scene);
+        }
+
+        private void BindRepairResultText(Scene scene)
+        {
+            var resultText = scene.GetRootGameObjects()
+                .SelectMany(rootObject => rootObject.GetComponentsInChildren<Text>(true))
+                .FirstOrDefault(text => text.GetComponentInParent<Button>(true) == null);
+
+            if (resultText == null)
+            {
+                return;
+            }
+
+            resultText.text = string.IsNullOrWhiteSpace(pendingRepairResultMessage)
+                ? "修补完成。"
+                : pendingRepairResultMessage;
+            resultText.font = GetDefaultFont();
+            resultText.fontSize = 26;
+            resultText.fontStyle = FontStyle.Bold;
+            resultText.color = PrototypeUiTheme.Ink;
+            resultText.alignment = TextAnchor.MiddleLeft;
+            resultText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            resultText.verticalOverflow = VerticalWrapMode.Overflow;
+
+            var rectTransform = resultText.GetComponent<RectTransform>();
+            if (rectTransform != null)
+            {
+                rectTransform.offsetMin = new Vector2(56, 48);
+                rectTransform.offsetMax = new Vector2(-160, -48);
+            }
         }
 
         private static void BindButton(Scene scene, string objectName, UnityEngine.Events.UnityAction onClick)
@@ -1137,26 +1351,34 @@ namespace APlaceLikeMe.UI
         private static Component FindHudTextComponent(GameObject canvasObject, string hudObjectName)
         {
             var hudObject = FindInChildren(canvasObject.transform, hudObjectName);
-            return hudObject == null ? null : FindWritableTextComponent(hudObject.gameObject);
+            return hudObject == null ? null : EnsureHudText(hudObject);
         }
 
-        private static Component FindWritableTextComponent(GameObject root)
+        private static Component EnsureHudText(Transform hudObject)
         {
-            foreach (var component in root.GetComponentsInChildren<Component>(true))
+            var existingText = hudObject.GetComponentInChildren<Text>(true);
+            if (existingText != null)
             {
-                if (component == null || component is Transform)
-                {
-                    continue;
-                }
-
-                var textProperty = component.GetType().GetProperty("text");
-                if (textProperty != null && textProperty.PropertyType == typeof(string) && textProperty.CanWrite)
-                {
-                    return component;
-                }
+                return existingText;
             }
 
-            return null;
+            var textObject = new GameObject("Text", typeof(RectTransform), typeof(Text));
+            textObject.transform.SetParent(hudObject, false);
+            var rectTransform = textObject.GetComponent<RectTransform>();
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.offsetMin = Vector2.zero;
+            rectTransform.offsetMax = Vector2.zero;
+
+            var text = textObject.GetComponent<Text>();
+            text.font = GetDefaultFont();
+            text.fontSize = 18;
+            text.fontStyle = FontStyle.Bold;
+            text.color = PrototypeUiTheme.Ink;
+            text.alignment = TextAnchor.MiddleLeft;
+            text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+            return text;
         }
 
         private void UpdateSceneHud()
@@ -1168,23 +1390,23 @@ namespace APlaceLikeMe.UI
 
         private string GetCurrentTimeLabel()
         {
-            if (state.Phase == GamePhase.DayEnd || state.Phase == GamePhase.NightSummary || state.Phase == GamePhase.MaterialPurchase)
-            {
-                return "晚上";
-            }
+            return FormatDayLabel(state.CurrentDay);
+        }
 
-            var todayCompletedCount = state.CompletedOrders.Count(order => order.DayCompleted == state.CurrentDay);
-            if (todayCompletedCount <= 0)
+        private static string FormatDayLabel(int day)
+        {
+            return day switch
             {
-                return "上午";
-            }
+                1 => "第一天",
+                2 => "第二天",
+                3 => "第三天",
+                _ => $"第{day}天"
+            };
+        }
 
-            if (todayCompletedCount == 1)
-            {
-                return "午后";
-            }
-
-            return "快收店了";
+        private static int GetLivingCostForNextDay(int day)
+        {
+            return day == 3 ? DailyLivingCost + ThirdDayExtraCost : DailyLivingCost;
         }
 
         private static void SetTextValue(Component component, string value)
@@ -1269,13 +1491,23 @@ namespace APlaceLikeMe.UI
             var interactable = GetCurrentInteractable();
             if (interactable != null)
             {
-                interactionHintText.text = interactable.Prompt;
+                interactionHintText.text = GetInteractionPrompt(interactable);
                 return;
             }
 
             interactionHintText.text = currentRoom == RoomMode.Store
                 ? "WASD / 方向键移动，靠近双门或蓝色工作台按 E"
                 : "WASD / 方向键移动，靠近床、材料桌或门按 E";
+        }
+
+        private string GetInteractionPrompt(PrototypeSceneInteractable interactable)
+        {
+            if (interactable.Kind == PrototypeSceneInteractionKind.BedroomStoreDoor && canReturnToStoreAfterRest)
+            {
+                return "按 E：回店铺";
+            }
+
+            return interactable.Prompt;
         }
 
         private string FormatMaterials()

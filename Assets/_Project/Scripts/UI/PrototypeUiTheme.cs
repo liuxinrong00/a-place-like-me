@@ -8,6 +8,9 @@ namespace APlaceLikeMe.UI
         public static readonly Color32 Paper = new(255, 255, 252, 255);
         public static readonly Color32 PaperMuted = new(244, 243, 238, 255);
         public static readonly Color32 Card = new(255, 255, 252, 255);
+        public static readonly Color32 ListItem = new(200, 178, 150, 255);
+        public static readonly Color32 ListItemSelected = new(200, 178, 150, 255);
+        public static readonly Color32 ListItemHover = new(218, 202, 171, 255);
         public static readonly Color32 CardSelected = new(235, 239, 229, 255);
         public static readonly Color32 CardUnavailable = new(238, 238, 232, 255);
         public static readonly Color32 Primary = new(238, 242, 231, 255);

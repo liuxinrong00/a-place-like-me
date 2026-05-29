@@ -15,4 +15,4 @@ MonoBehaviour:
   id: glue
   displayName: 胶水
   description: 温和但牢靠的修补胶，适合陶瓷和小摆件。
-  defaultPrice: 2
+  defaultPrice: 5

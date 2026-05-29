@@ -27,7 +27,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 6aa9f1d2ef8740e88a4c0c9407a0a101, type: 2}
   - {fileID: 11400000, guid: 6aa9f1d2ef8740e88a4c0c9407a0a102, type: 2}
   - {fileID: 11400000, guid: 6aa9f1d2ef8740e88a4c0c9407a0a103, type: 2}
-  ordersPerDay: 3
+  ordersPerDay: 9
   prototypeDays: 3
   nightSupplyCost: 6
   nightSupplyAmount: 6
