@@ -11,6 +11,7 @@ namespace APlaceLikeMe.Gameplay
         private readonly List<OrderDefinition> acceptedOrders = new();
         private readonly List<CompletedOrderRecord> completedOrders = new();
         private readonly List<string> feedbackLog = new();
+        private readonly Dictionary<MaterialDefinition, int> todayMaterialConsumption = new();
 
         public int CurrentDay { get; private set; } = 1;
         public int Coins { get; private set; }
@@ -19,6 +20,7 @@ namespace APlaceLikeMe.Gameplay
         public int DailyEnergyRecovery { get; private set; }
         public int TodayIncome { get; private set; }
         public int TodayExpenses { get; private set; }
+        public int TodayEnergySpent { get; private set; }
         public int TodayAuthenticityDelta { get; private set; }
         public GamePhase Phase { get; private set; } = GamePhase.Boot;
         public IReadOnlyList<OrderDefinition> TodaysOrders => todaysOrders;
@@ -26,6 +28,7 @@ namespace APlaceLikeMe.Gameplay
         public IReadOnlyList<CompletedOrderRecord> CompletedOrders => completedOrders;
         public IReadOnlyList<string> FeedbackLog => feedbackLog;
         public IReadOnlyDictionary<MaterialDefinition, int> MaterialStock => materialStock;
+        public IReadOnlyDictionary<MaterialDefinition, int> TodayMaterialConsumption => todayMaterialConsumption;
 
         public void Initialize(GameInitialConfig config)
         {
@@ -36,10 +39,12 @@ namespace APlaceLikeMe.Gameplay
             DailyEnergyRecovery = config.DailyEnergyRecovery;
             TodayIncome = 0;
             TodayExpenses = 0;
+            TodayEnergySpent = 0;
             TodayAuthenticityDelta = 0;
             Phase = GamePhase.Boot;
 
             materialStock.Clear();
+            todayMaterialConsumption.Clear();
             foreach (var stock in config.InitialMaterials)
             {
                 if (stock.material == null || stock.amount <= 0)
@@ -68,7 +73,9 @@ namespace APlaceLikeMe.Gameplay
             acceptedOrders.Clear();
             TodayIncome = 0;
             TodayExpenses = 0;
+            TodayEnergySpent = 0;
             TodayAuthenticityDelta = 0;
+            todayMaterialConsumption.Clear();
         }
 
         public bool AcceptOrder(OrderDefinition order)
@@ -116,12 +123,15 @@ namespace APlaceLikeMe.Gameplay
             }
 
             materialStock[material] = currentAmount - amount;
+            todayMaterialConsumption.TryGetValue(material, out var consumedAmount);
+            todayMaterialConsumption[material] = consumedAmount + amount;
             return true;
         }
 
         public void SpendEnergy(int amount)
         {
             Energy -= amount;
+            TodayEnergySpent += amount;
         }
 
         public void AddCoins(int amount)
@@ -181,7 +191,9 @@ namespace APlaceLikeMe.Gameplay
             Energy = DailyEnergyRecovery;
             TodayIncome = 0;
             TodayExpenses = 0;
+            TodayEnergySpent = 0;
             TodayAuthenticityDelta = 0;
+            todayMaterialConsumption.Clear();
             feedbackLog.Clear();
             SetTodaysOrders(orders);
             SetPhase(GamePhase.OrderSelection);

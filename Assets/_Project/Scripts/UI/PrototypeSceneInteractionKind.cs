@@ -8,6 +8,7 @@ namespace APlaceLikeMe.UI
         SupplyTable,
         OrderBoard,
         Phone,
-        RepairTable
+        RepairTable,
+        CashierDesk
     }
 }

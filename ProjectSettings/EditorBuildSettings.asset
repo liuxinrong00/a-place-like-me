@@ -24,7 +24,10 @@ EditorBuildSettings:
     path: Assets/_Project/Scenes/ChooseUIScene.unity
     guid: 3f0a462e751bf40498ab7ad8d9ebee5d
   - enabled: 1
-    path: Assets/_Project/Scenes/ShoopingInformation.unity
+    path: Assets/_Project/Scenes/SleepChioce.unity
+    guid: 1de789ee4bcc0384981e25658b0da5f8
+  - enabled: 1
+    path: Assets/_Project/Scenes/ShoppingInformation.unity
     guid: 2a554505e474f0f40bd1ee968f93d476
   - enabled: 1
     path: Assets/_Project/Scenes/Store.unity

@@ -29,6 +29,7 @@ namespace APlaceLikeMe.UI
 
         private readonly List<Button> listButtons = new();
         private readonly List<Button> repairMethodButtons = new();
+        private readonly List<PrototypeButtonBinding> buttonBindings = new();
 
         private PrototypeGameController host;
         private string sceneName;
@@ -52,6 +53,11 @@ namespace APlaceLikeMe.UI
         private int materialStartIndex;
         private int purchaseCount = 1;
         private string statusMessage;
+        private PrototypeButtonBinding pendingMouseButtonBinding;
+        private PrototypeButtonBinding pendingTouchButtonBinding;
+        private int pendingTouchFingerId = -1;
+        private int lastButtonActionFrame = -1;
+        private Button lastButtonActionTarget;
 
         public void Configure(string loadedSceneName, PrototypeGameController prototypeHost)
         {
@@ -63,6 +69,16 @@ namespace APlaceLikeMe.UI
         private void Start()
         {
             InitializeOnce();
+        }
+
+        private void Update()
+        {
+            if (host != null && host.IsOverlayOpen)
+            {
+                return;
+            }
+
+            TryHandleButtonPointer();
         }
 
         private void InitializeOnce()
@@ -109,7 +125,7 @@ namespace APlaceLikeMe.UI
 
             if (returnButton != null)
             {
-                returnButton.onClick.AddListener(CloseScene);
+                BindButtonAction(returnButton, CloseScene);
             }
         }
 
@@ -122,7 +138,7 @@ namespace APlaceLikeMe.UI
 
             if (acceptButton != null)
             {
-                acceptButton.onClick.AddListener(AcceptSelectedOrder);
+                BindButtonAction(acceptButton, AcceptSelectedOrder);
             }
 
             BindPageButtons();
@@ -139,7 +155,7 @@ namespace APlaceLikeMe.UI
 
             if (acceptButton != null)
             {
-                acceptButton.onClick.AddListener(RepairSelectedOrder);
+                BindButtonAction(acceptButton, RepairSelectedOrder);
             }
 
             BindPageButtons();
@@ -157,17 +173,17 @@ namespace APlaceLikeMe.UI
 
             if (acceptButton != null)
             {
-                acceptButton.onClick.AddListener(BuySelectedMaterial);
+                BindButtonAction(acceptButton, BuySelectedMaterial);
             }
 
             if (lastButton != null)
             {
-                lastButton.onClick.AddListener(DecreasePurchaseCount);
+                BindButtonAction(lastButton, DecreasePurchaseCount);
             }
 
             if (nextButton != null)
             {
-                nextButton.onClick.AddListener(IncreasePurchaseCount);
+                BindButtonAction(nextButton, IncreasePurchaseCount);
             }
 
             if (materialScrollbar != null)
@@ -182,12 +198,12 @@ namespace APlaceLikeMe.UI
         {
             if (lastButton != null)
             {
-                lastButton.onClick.AddListener(PreviousOrderPage);
+                BindButtonAction(lastButton, PreviousOrderPage);
             }
 
             if (nextButton != null)
             {
-                nextButton.onClick.AddListener(NextOrderPage);
+                BindButtonAction(nextButton, NextOrderPage);
             }
         }
 
@@ -580,7 +596,7 @@ namespace APlaceLikeMe.UI
 
             var button = buttonObject.GetComponent<Button>();
             button.targetGraphic = image;
-            button.onClick.AddListener(onClick);
+            BindButtonAction(button, onClick);
             var colors = button.colors;
             colors.normalColor = PrototypeUiTheme.ListItem;
             colors.highlightedColor = PrototypeUiTheme.ListItemHover;
@@ -676,12 +692,13 @@ namespace APlaceLikeMe.UI
             }
         }
 
-        private static void ClearButtons(List<Button> buttons)
+        private void ClearButtons(List<Button> buttons)
         {
             foreach (var button in buttons)
             {
                 if (button != null)
                 {
+                    RemoveButtonBinding(button);
                     Destroy(button.gameObject);
                 }
             }
@@ -692,6 +709,151 @@ namespace APlaceLikeMe.UI
         private void CloseScene()
         {
             host?.CloseInteractionSceneFromPanel();
+        }
+
+        private void BindButtonAction(Button button, UnityEngine.Events.UnityAction action)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            button.onClick.AddListener(() => TryInvokeButtonAction(button, action));
+            buttonBindings.Add(new PrototypeButtonBinding(button, action));
+        }
+
+        private bool TryHandleButtonPointer()
+        {
+            if (buttonBindings.Count == 0)
+            {
+                return false;
+            }
+
+            var handled = false;
+            if (Input.GetMouseButtonDown(0))
+            {
+                pendingMouseButtonBinding = FindButtonBindingAtScreenPosition(Input.mousePosition);
+                handled = pendingMouseButtonBinding.Button != null;
+            }
+
+            if (Input.GetMouseButtonUp(0))
+            {
+                var pressedBinding = pendingMouseButtonBinding;
+                pendingMouseButtonBinding = default;
+                if (pressedBinding.Button != null &&
+                    IsSameButtonBinding(pressedBinding, FindButtonBindingAtScreenPosition(Input.mousePosition)) &&
+                    TryInvokeButtonBinding(pressedBinding))
+                {
+                    return true;
+                }
+            }
+
+            for (var index = 0; index < Input.touchCount; index++)
+            {
+                var touch = Input.GetTouch(index);
+                if (touch.phase == TouchPhase.Began)
+                {
+                    var binding = FindButtonBindingAtScreenPosition(touch.position);
+                    if (binding.Button == null)
+                    {
+                        continue;
+                    }
+
+                    pendingTouchFingerId = touch.fingerId;
+                    pendingTouchButtonBinding = binding;
+                    handled = true;
+                }
+                else if (touch.fingerId == pendingTouchFingerId &&
+                    (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled))
+                {
+                    var pressedBinding = pendingTouchButtonBinding;
+                    pendingTouchFingerId = -1;
+                    pendingTouchButtonBinding = default;
+                    if (touch.phase == TouchPhase.Ended &&
+                        pressedBinding.Button != null &&
+                        IsSameButtonBinding(pressedBinding, FindButtonBindingAtScreenPosition(touch.position)) &&
+                        TryInvokeButtonBinding(pressedBinding))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return handled;
+        }
+
+        private PrototypeButtonBinding FindButtonBindingAtScreenPosition(Vector2 screenPosition)
+        {
+            for (var index = buttonBindings.Count - 1; index >= 0; index--)
+            {
+                var binding = buttonBindings[index];
+                if (binding.Button == null)
+                {
+                    continue;
+                }
+
+                if (!binding.Button.gameObject.activeInHierarchy || !binding.Button.interactable)
+                {
+                    continue;
+                }
+
+                var rectTransform = binding.Button.GetComponent<RectTransform>();
+                var canvas = binding.Button.GetComponentInParent<Canvas>();
+                var camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
+                    ? canvas.worldCamera
+                    : null;
+                if (rectTransform != null &&
+                    RectTransformUtility.RectangleContainsScreenPoint(rectTransform, screenPosition, camera))
+                {
+                    return binding;
+                }
+            }
+
+            return default;
+        }
+
+        private bool TryInvokeButtonBinding(PrototypeButtonBinding binding)
+        {
+            return TryInvokeButtonAction(binding.Button, binding.Action);
+        }
+
+        private bool TryInvokeButtonAction(Button button, UnityEngine.Events.UnityAction action)
+        {
+            if (button == null || !button.gameObject.activeInHierarchy || !button.interactable)
+            {
+                return false;
+            }
+
+            if (lastButtonActionFrame == Time.frameCount && lastButtonActionTarget == button)
+            {
+                return true;
+            }
+
+            lastButtonActionFrame = Time.frameCount;
+            lastButtonActionTarget = button;
+            action?.Invoke();
+            return true;
+        }
+
+        private void RemoveButtonBinding(Button button)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            for (var index = buttonBindings.Count - 1; index >= 0; index--)
+            {
+                if (buttonBindings[index].Button == button)
+                {
+                    buttonBindings.RemoveAt(index);
+                }
+            }
+        }
+
+        private static bool IsSameButtonBinding(PrototypeButtonBinding left, PrototypeButtonBinding right)
+        {
+            return left.Button != null && left.Button == right.Button;
         }
 
         private Button FindButton(string objectName)
@@ -933,6 +1095,18 @@ namespace APlaceLikeMe.UI
         private static string FormatSigned(int value)
         {
             return value >= 0 ? $"+{value}" : value.ToString();
+        }
+
+        private readonly struct PrototypeButtonBinding
+        {
+            public PrototypeButtonBinding(Button button, UnityEngine.Events.UnityAction action)
+            {
+                Button = button;
+                Action = action;
+            }
+
+            public Button Button { get; }
+            public UnityEngine.Events.UnityAction Action { get; }
         }
 
         private static Font GetDefaultFont()
