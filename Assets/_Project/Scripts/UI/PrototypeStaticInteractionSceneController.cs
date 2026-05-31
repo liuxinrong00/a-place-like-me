@@ -529,7 +529,7 @@ namespace APlaceLikeMe.UI
             infoContentRoot = CreateRuntimeRoot(infoObject, "RuntimeFixInfo", new Vector2(0.08f, 0.08f), new Vector2(0.92f, 0.82f));
             AddVerticalLayout(infoContentRoot, 12);
             detailText = CreateRuntimeText(infoContentRoot, "Detail", 18, FontStyle.Normal);
-            AddLayout(detailText.gameObject, 160, 1f);
+            AddLayout(detailText.gameObject, 184, 1f);
             repairMethodRoot = CreateChildPanel(infoContentRoot, "RepairMethods");
             AddLayout(repairMethodRoot.gameObject, 196, 0f);
             AddVerticalLayout(repairMethodRoot, 10);
