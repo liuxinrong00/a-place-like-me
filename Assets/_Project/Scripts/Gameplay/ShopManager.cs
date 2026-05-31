@@ -27,7 +27,7 @@ namespace APlaceLikeMe.Gameplay
         [Header("Spawning")]
         [SerializeField] private bool spawnCustomers = true;
         [SerializeField] private List<GameObject> npcPrefabs = new();
-        [SerializeField] private float firstSpawnDelay = 0.5f;
+        [SerializeField] private float firstSpawnDelay = 10f;
         [SerializeField] private float spawnInterval = 20f;
         [SerializeField] private int maxCustomersInStore = 5;
         [SerializeField] private int maxSpawnedCustomers = 5;
