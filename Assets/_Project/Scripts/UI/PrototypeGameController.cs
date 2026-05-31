@@ -703,7 +703,6 @@ namespace APlaceLikeMe.UI
         private void SetupRoomScene(Scene scene, RoomMode room, Vector2 spawnPosition)
         {
             ConfigureRuntimeBounds(scene, room);
-            ConfigureRoomInteractionMarkerColliders(scene, room);
             SetRoomCamera(scene);
             var runtimeRoot = CreateRuntimeRoot(scene);
             ConfigureRoomLighting(scene, runtimeRoot.transform, room);
@@ -1267,30 +1266,6 @@ namespace APlaceLikeMe.UI
             }
 
             return false;
-        }
-
-        private static void ConfigureRoomInteractionMarkerColliders(Scene scene, RoomMode room)
-        {
-            if (room != RoomMode.Bedroom)
-            {
-                return;
-            }
-
-            foreach (var rootObject in scene.GetRootGameObjects())
-            {
-                foreach (var tilemap in rootObject.GetComponentsInChildren<Tilemap>(true))
-                {
-                    if (!IsInteractionMarkerTilemap(tilemap))
-                    {
-                        continue;
-                    }
-
-                    foreach (var collider in tilemap.GetComponents<Collider2D>())
-                    {
-                        collider.isTrigger = true;
-                    }
-                }
-            }
         }
 
         private static Rect ExpandRect(Rect rect, float horizontalPadding, float verticalPadding)

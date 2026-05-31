@@ -33,21 +33,26 @@ public class PlayerMove : MonoBehaviour
         if (PrototypeGameController.Active != null && PrototypeGameController.Active.AreWorldControlsLocked)
         {
             moveInput = Vector2.zero;
+            StopRigidbody();
             UpdateAnimator();
             return;
         }
 
-        moveInput.x = Input.GetAxisRaw("Horizontal");
-        moveInput.y = Input.GetAxisRaw("Vertical");
-        moveInput = moveInput.normalized;
+        moveInput = ReadMovementInput();
 
         UpdateAnimator();
     }
 
     private void FixedUpdate()
     {
-        if (rb == null || moveInput == Vector2.zero)
+        if (rb == null)
         {
+            return;
+        }
+
+        if (moveInput == Vector2.zero)
+        {
+            StopRigidbody();
             return;
         }
 
@@ -60,6 +65,43 @@ public class PlayerMove : MonoBehaviour
         }
 
         rb.MovePosition(nextPosition);
+    }
+
+    private static Vector2 ReadMovementInput()
+    {
+        var movement = Vector2.zero;
+        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
+        {
+            movement.x -= 1f;
+        }
+
+        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
+        {
+            movement.x += 1f;
+        }
+
+        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
+        {
+            movement.y -= 1f;
+        }
+
+        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
+        {
+            movement.y += 1f;
+        }
+
+        return movement.normalized;
+    }
+
+    private void StopRigidbody()
+    {
+        if (rb == null)
+        {
+            return;
+        }
+
+        rb.velocity = Vector2.zero;
+        rb.angularVelocity = 0f;
     }
 
     private void UpdateAnimator()

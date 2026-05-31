@@ -174,6 +174,11 @@ namespace APlaceLikeMe.Gameplay
                 activeNPCs.Add(npc);
             }
 
+            if (player == null)
+            {
+                player = FindSceneTransform(PlayerObjectName);
+            }
+
             ConfigureNpcCollisionIgnores(npc);
 
             if (npc.transform.parent == null)
@@ -596,6 +601,12 @@ namespace APlaceLikeMe.Gameplay
                 return;
             }
 
+            if (player != null)
+            {
+                var playerColliders = player.GetComponentsInChildren<Collider2D>();
+                IgnoreColliderPairs(npcColliders, playerColliders);
+            }
+
             for (var index = 0; index < activeNPCs.Count; index++)
             {
                 var otherNpc = activeNPCs[index];
@@ -605,21 +616,26 @@ namespace APlaceLikeMe.Gameplay
                 }
 
                 var otherColliders = otherNpc.GetComponentsInChildren<Collider2D>();
-                for (var npcColliderIndex = 0; npcColliderIndex < npcColliders.Length; npcColliderIndex++)
-                {
-                    var npcCollider = npcColliders[npcColliderIndex];
-                    if (npcCollider == null)
-                    {
-                        continue;
-                    }
+                IgnoreColliderPairs(npcColliders, otherColliders);
+            }
+        }
 
-                    for (var otherColliderIndex = 0; otherColliderIndex < otherColliders.Length; otherColliderIndex++)
+        private static void IgnoreColliderPairs(Collider2D[] firstColliders, Collider2D[] secondColliders)
+        {
+            for (var firstIndex = 0; firstIndex < firstColliders.Length; firstIndex++)
+            {
+                var firstCollider = firstColliders[firstIndex];
+                if (firstCollider == null)
+                {
+                    continue;
+                }
+
+                for (var secondIndex = 0; secondIndex < secondColliders.Length; secondIndex++)
+                {
+                    var secondCollider = secondColliders[secondIndex];
+                    if (secondCollider != null)
                     {
-                        var otherCollider = otherColliders[otherColliderIndex];
-                        if (otherCollider != null)
-                        {
-                            Physics2D.IgnoreCollision(npcCollider, otherCollider, true);
-                        }
+                        Physics2D.IgnoreCollision(firstCollider, secondCollider, true);
                     }
                 }
             }
@@ -763,10 +779,14 @@ namespace APlaceLikeMe.Gameplay
                         continue;
                     }
 
-                    var isBlockingMarker = IsBlockingInteractionMarker(tilemap.name);
+                    if (!IsBlockingInteractionMarker(tilemap.name))
+                    {
+                        continue;
+                    }
+
                     foreach (var collider in tilemap.GetComponents<Collider2D>())
                     {
-                        collider.isTrigger = !isBlockingMarker;
+                        collider.isTrigger = false;
                     }
                 }
             }
