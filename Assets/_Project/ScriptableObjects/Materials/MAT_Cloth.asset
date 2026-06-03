@@ -15,4 +15,4 @@ MonoBehaviour:
   id: cloth
   displayName: 布料
   description: 旧衣物拆下的干净布料，适合缝补柔软物件。
-  defaultPrice: 8
+  defaultPrice: 5

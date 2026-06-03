@@ -65,6 +65,10 @@ namespace APlaceLikeMe.UI
         private const string LegacyInteractionMarkerRootName = "Intraction";
         private const float CameraOrthographicSize = 5f;
         private const float InteractionRadius = 0.55f;
+        private const float CheckoutIncomeDisplaySeconds = 1f;
+        private const float CheckoutIncomeHorizontalGap = 34f;
+        private const float CheckoutIncomeWidth = 80f;
+        private static readonly Color HudTextColor = Color.black;
 #if UNITY_EDITOR
         private const string PrototypeConfigAssetPath = "Assets/_Project/ScriptableObjects/GameConfig/PrototypeGameConfig.asset";
 #endif
@@ -148,8 +152,6 @@ namespace APlaceLikeMe.UI
         private Component timeHudText;
         private RectTransform phoneLauncher;
         private RectTransform phonePanel;
-        private RectTransform phoneScrollContent;
-        private ScrollRect phoneScrollRect;
         private Text phoneTitleText;
         private Text phoneBodyText;
         private PrototypePhoneAppController phoneApp;
@@ -357,12 +359,17 @@ namespace APlaceLikeMe.UI
 
         private void OpenPhone()
         {
+            OpenPhone(PrototypePhoneAppController.Tab.Reviews);
+        }
+
+        private void OpenPhone(PrototypePhoneAppController.Tab initialTab)
+        {
             if (phoneApp == null || currentRoom != RoomMode.Bedroom)
             {
                 return;
             }
 
-            phoneApp.Open();
+            phoneApp.Open(initialTab);
             suppressNextInteractInput = true;
             Render();
         }
@@ -393,6 +400,8 @@ namespace APlaceLikeMe.UI
 
             if (Input.GetMouseButtonDown(0) && phoneApp.TryOpenFromScreenPosition(Input.mousePosition))
             {
+                suppressNextInteractInput = true;
+                Render();
                 return true;
             }
 
@@ -401,6 +410,8 @@ namespace APlaceLikeMe.UI
                 var touch = Input.GetTouch(index);
                 if (touch.phase == TouchPhase.Began && phoneApp.TryOpenFromScreenPosition(touch.position))
                 {
+                    suppressNextInteractInput = true;
+                    Render();
                     return true;
                 }
             }
@@ -545,7 +556,7 @@ namespace APlaceLikeMe.UI
                 case PrototypeSceneInteractionKind.CashierDesk:
                     if (ShopManager.Instance != null && ShopManager.Instance.TryCheckoutFrontNPC(out var checkoutIncome))
                     {
-                        state.AddCoins(checkoutIncome);
+                        ShowCheckoutIncome(checkoutIncome);
                         feedbackText.text = $"结账完成，收入 +{checkoutIncome} 元，顾客离店。";
                     }
                     else
@@ -2054,6 +2065,9 @@ namespace APlaceLikeMe.UI
             moneyHudText = FindHudTextComponent(canvasObject, MoneyHudName);
             energyHudText = FindHudTextComponent(canvasObject, EnergyHudName);
             timeHudText = FindHudTextComponent(canvasObject, TimeHudName);
+            ApplyHudTextColor(moneyHudText);
+            ApplyHudTextColor(energyHudText);
+            ApplyHudTextColor(timeHudText);
             UpdateSceneHud();
         }
 
@@ -2083,11 +2097,19 @@ namespace APlaceLikeMe.UI
             text.font = GetDefaultFont();
             text.fontSize = 18;
             text.fontStyle = FontStyle.Bold;
-            text.color = PrototypeUiTheme.Ink;
+            text.color = HudTextColor;
             text.alignment = TextAnchor.MiddleLeft;
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
             text.verticalOverflow = VerticalWrapMode.Overflow;
             return text;
+        }
+
+        private static void ApplyHudTextColor(Component component)
+        {
+            if (component is Text text)
+            {
+                text.color = HudTextColor;
+            }
         }
 
         private void UpdateSceneHud()
@@ -2095,6 +2117,134 @@ namespace APlaceLikeMe.UI
             SetTextValue(moneyHudText, state.Coins.ToString());
             SetTextValue(energyHudText, $"{state.Energy}/{Mathf.Max(1, state.DailyEnergyRecovery)}");
             SetTextValue(timeHudText, GetCurrentTimeLabel());
+        }
+
+        private void ShowCheckoutIncome(int amount)
+        {
+            if (amount <= 0)
+            {
+                return;
+            }
+
+            StartCoroutine(ShowCheckoutIncomeRoutine(amount));
+        }
+
+        private IEnumerator ShowCheckoutIncomeRoutine(int amount)
+        {
+            var incomeText = CreateCheckoutIncomeText(amount);
+            yield return new WaitForSeconds(CheckoutIncomeDisplaySeconds);
+
+            if (incomeText != null)
+            {
+                incomeText.gameObject.SetActive(false);
+            }
+
+            state.AddCoins(amount);
+            Render();
+
+            if (incomeText != null)
+            {
+                Destroy(incomeText.gameObject);
+            }
+        }
+
+        private Text CreateCheckoutIncomeText(int amount)
+        {
+            if (moneyHudText == null)
+            {
+                return null;
+            }
+
+            var moneyText = moneyHudText as Text;
+            var moneyRect = moneyHudText.GetComponent<RectTransform>();
+            if (moneyRect == null || moneyRect.parent == null)
+            {
+                return null;
+            }
+
+            var incomeText = CreateText(
+                moneyRect.parent,
+                "CheckoutIncome",
+                moneyText == null ? 25 : moneyText.fontSize,
+                moneyText == null ? FontStyle.Bold : moneyText.fontStyle,
+                HudTextColor);
+            incomeText.text = $"+{amount}";
+            incomeText.alignment = GetLeftAlignedTextAnchor(moneyText == null ? TextAnchor.MiddleLeft : moneyText.alignment);
+            incomeText.raycastTarget = false;
+            CopyTextStyle(moneyText, incomeText);
+            incomeText.transform.SetAsLastSibling();
+
+            var incomeRect = incomeText.GetComponent<RectTransform>();
+            incomeRect.anchorMin = moneyRect.anchorMin;
+            incomeRect.anchorMax = moneyRect.anchorMax;
+            incomeRect.pivot = new Vector2(0f, moneyRect.pivot.y);
+            incomeRect.sizeDelta = new Vector2(CheckoutIncomeWidth, GetRectHeight(moneyRect));
+            incomeRect.anchoredPosition = new Vector2(
+                GetTextRightEdge(moneyText, moneyRect) + CheckoutIncomeHorizontalGap,
+                moneyRect.anchoredPosition.y);
+
+            var shadow = incomeText.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color32(72, 72, 72, 180);
+            shadow.effectDistance = new Vector2(1f, -1f);
+            return incomeText;
+        }
+
+        private static void CopyTextStyle(Text source, Text target)
+        {
+            if (source == null || target == null)
+            {
+                return;
+            }
+
+            target.font = source.font;
+            target.fontSize = source.fontSize;
+            target.fontStyle = source.fontStyle;
+            target.lineSpacing = source.lineSpacing;
+            target.supportRichText = source.supportRichText;
+            target.resizeTextForBestFit = source.resizeTextForBestFit;
+            target.resizeTextMinSize = source.resizeTextMinSize;
+            target.resizeTextMaxSize = source.resizeTextMaxSize;
+            target.alignByGeometry = source.alignByGeometry;
+            target.horizontalOverflow = source.horizontalOverflow;
+            target.verticalOverflow = source.verticalOverflow;
+        }
+
+        private static TextAnchor GetLeftAlignedTextAnchor(TextAnchor source)
+        {
+            return source switch
+            {
+                TextAnchor.UpperLeft or TextAnchor.UpperCenter or TextAnchor.UpperRight => TextAnchor.UpperLeft,
+                TextAnchor.LowerLeft or TextAnchor.LowerCenter or TextAnchor.LowerRight => TextAnchor.LowerLeft,
+                _ => TextAnchor.MiddleLeft
+            };
+        }
+
+        private static float GetTextRightEdge(Text text, RectTransform rectTransform)
+        {
+            var rectWidth = GetRectWidth(rectTransform);
+            var rectLeft = rectTransform.anchoredPosition.x - rectTransform.pivot.x * rectWidth;
+            if (text == null)
+            {
+                return rectLeft + rectWidth;
+            }
+
+            var preferredWidth = Mathf.Max(0f, text.preferredWidth);
+            return text.alignment switch
+            {
+                TextAnchor.UpperLeft or TextAnchor.MiddleLeft or TextAnchor.LowerLeft => rectLeft + preferredWidth,
+                TextAnchor.UpperRight or TextAnchor.MiddleRight or TextAnchor.LowerRight => rectLeft + rectWidth,
+                _ => rectLeft + rectWidth * 0.5f + preferredWidth * 0.5f
+            };
+        }
+
+        private static float GetRectWidth(RectTransform rectTransform)
+        {
+            return rectTransform.rect.width > 0f ? rectTransform.rect.width : Mathf.Abs(rectTransform.sizeDelta.x);
+        }
+
+        private static float GetRectHeight(RectTransform rectTransform)
+        {
+            return rectTransform.rect.height > 0f ? rectTransform.rect.height : Mathf.Abs(rectTransform.sizeDelta.y);
         }
 
         private string GetCurrentTimeLabel()
@@ -2357,135 +2507,56 @@ namespace APlaceLikeMe.UI
 
         private void BuildPhoneUi(Transform parent)
         {
-            phoneLauncher = CreatePanel(parent, "PhoneLauncher", new Vector2(0.72f, 0.02f), new Vector2(0.98f, 0.34f));
-            var launcherButton = phoneLauncher.gameObject.AddComponent<Button>();
-            var launcherImage = phoneLauncher.gameObject.AddComponent<Image>();
-            launcherImage.color = new Color32(35, 39, 45, 245);
-            AddOutline(phoneLauncher.gameObject, 2);
-            launcherButton.targetGraphic = launcherImage;
-            launcherButton.onClick.AddListener(OpenPhone);
+            phoneLauncher = CreateFixedImagePanel(parent, "PhoneLauncher", new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(560f, 594f), Vector2.zero, "UI/PhoneMenu");
+            var launcherTabs = CreatePanel(phoneLauncher, "LauncherTabHotspots", Vector2.zero, Vector2.one);
+            AddPhoneLauncherTab(launcherTabs, PrototypePhoneAppController.Tab.Reviews, new Vector2(0.09f, 0.25f), new Vector2(0.49f, 0.42f));
+            AddPhoneLauncherTab(launcherTabs, PrototypePhoneAppController.Tab.Diary, new Vector2(0.51f, 0.25f), new Vector2(0.91f, 0.42f));
+            AddPhoneLauncherTab(launcherTabs, PrototypePhoneAppController.Tab.Moments, new Vector2(0.09f, 0.04f), new Vector2(0.49f, 0.21f));
+            AddPhoneLauncherTab(launcherTabs, PrototypePhoneAppController.Tab.Summary, new Vector2(0.51f, 0.04f), new Vector2(0.91f, 0.21f));
 
-            var launcherLayout = phoneLauncher.gameObject.AddComponent<VerticalLayoutGroup>();
-            launcherLayout.padding = new RectOffset(20, 20, 18, 18);
-            launcherLayout.spacing = 8;
-            launcherLayout.childControlWidth = true;
-            launcherLayout.childControlHeight = true;
-            launcherLayout.childForceExpandWidth = true;
-            launcherLayout.childForceExpandHeight = false;
-
-            var launcherTop = CreatePanel(phoneLauncher, "Speaker", new Vector2(0, 0), new Vector2(1, 0));
-            var speakerElement = launcherTop.gameObject.AddComponent<LayoutElement>();
-            speakerElement.minHeight = 12;
-            speakerElement.preferredHeight = 12;
-            var speakerImage = launcherTop.gameObject.AddComponent<Image>();
-            speakerImage.color = new Color32(13, 17, 22, 255);
-
-            var launcherText = CreateText(phoneLauncher, "Label", 22, FontStyle.Bold, PrototypeUiTheme.Paper);
-            launcherText.text = "手机\n查看今日反馈";
-            launcherText.alignment = TextAnchor.MiddleCenter;
-            launcherText.verticalOverflow = VerticalWrapMode.Truncate;
-            var launcherTextElement = launcherText.gameObject.AddComponent<LayoutElement>();
-            launcherTextElement.flexibleHeight = 1;
-
-            phonePanel = CreatePanel(parent, "PhonePanel", new Vector2(0.66f, 0.02f), new Vector2(0.98f, 0.98f));
-            var phoneFrame = phonePanel.gameObject.AddComponent<Image>();
-            phoneFrame.color = new Color32(28, 31, 36, 250);
-            AddOutline(phonePanel.gameObject, 2);
-
-            var phoneSafeArea = CreatePanel(phonePanel, "Screen", new Vector2(0.04f, 0.04f), new Vector2(0.96f, 0.96f));
-            var screenImage = phoneSafeArea.gameObject.AddComponent<Image>();
-            screenImage.color = new Color32(255, 255, 252, 248);
-
-            var screenLayout = phoneSafeArea.gameObject.AddComponent<VerticalLayoutGroup>();
-            screenLayout.padding = new RectOffset(20, 20, 20, 20);
-            screenLayout.spacing = 12;
-            screenLayout.childControlWidth = true;
-            screenLayout.childControlHeight = true;
-            screenLayout.childForceExpandWidth = true;
-            screenLayout.childForceExpandHeight = false;
-
-            var header = CreatePanel(phoneSafeArea, "Header", new Vector2(0, 0), new Vector2(1, 0));
-            var headerElement = header.gameObject.AddComponent<LayoutElement>();
-            headerElement.minHeight = 58;
-            headerElement.preferredHeight = 58;
-            var headerLayout = header.gameObject.AddComponent<HorizontalLayoutGroup>();
-            headerLayout.spacing = 12;
-            headerLayout.childControlWidth = true;
-            headerLayout.childControlHeight = true;
-            headerLayout.childForceExpandWidth = false;
-
-            phoneTitleText = CreateText(header, "Title", 24, FontStyle.Bold, PrototypeUiTheme.Ink);
-            phoneTitleText.alignment = TextAnchor.MiddleLeft;
-            var titleElement = phoneTitleText.gameObject.AddComponent<LayoutElement>();
-            titleElement.flexibleWidth = 1;
-
-            var closeButton = CreateButton(header, "×", ClosePhoneFromButton);
+            phonePanel = CreateAspectFitImagePanel(parent, "PhonePanel", new Vector2(0.02f, 0.02f), new Vector2(0.98f, 0.98f), "UI/PhoneLauncherNoTabs");
+            var closeButton = CreateHotspotButton(phonePanel, "Close", new Vector2(0.78f, 0.80f), new Vector2(0.92f, 0.90f), ClosePhoneFromButton);
+            var closeImage = closeButton.GetComponent<Image>();
+            closeImage.color = new Color32(245, 238, 228, 235);
+            AddOutline(closeButton.gameObject, 1);
+            var closeText = CreateText(closeButton.transform, "Label", 34, FontStyle.Bold, PrototypeUiTheme.Ink);
+            closeText.text = "x";
+            closeText.alignment = TextAnchor.MiddleCenter;
+            PlaceFull(closeText.GetComponent<RectTransform>(), new RectOffset(0, 0, 0, 0));
             var closeRect = closeButton.GetComponent<RectTransform>();
-            var closeLayout = closeButton.gameObject.GetComponent<LayoutElement>();
-            closeLayout.minWidth = 56;
-            closeLayout.preferredWidth = 56;
 
-            var tabs = CreatePanel(phoneSafeArea, "Tabs", new Vector2(0, 0), new Vector2(1, 0));
-            var tabsElement = tabs.gameObject.AddComponent<LayoutElement>();
-            tabsElement.minHeight = 124;
-            tabsElement.preferredHeight = 124;
-            var tabsLayout = tabs.gameObject.AddComponent<GridLayoutGroup>();
-            tabsLayout.cellSize = new Vector2(248, 54);
-            tabsLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            tabsLayout.constraintCount = 2;
-            tabsLayout.spacing = new Vector2(10, 10);
-            tabsLayout.childAlignment = TextAnchor.UpperCenter;
+            var tabs = CreatePanel(phonePanel, "TabHotspots", Vector2.zero, Vector2.one);
+            AddPhoneTab(tabs, PrototypePhoneAppController.Tab.Reviews, new Vector2(0.083f, 0.567f), new Vector2(0.493f, 0.673f));
+            AddPhoneTab(tabs, PrototypePhoneAppController.Tab.Diary, new Vector2(0.513f, 0.567f), new Vector2(0.923f, 0.673f));
+            AddPhoneTab(tabs, PrototypePhoneAppController.Tab.Moments, new Vector2(0.083f, 0.444f), new Vector2(0.493f, 0.548f));
+            AddPhoneTab(tabs, PrototypePhoneAppController.Tab.Summary, new Vector2(0.513f, 0.444f), new Vector2(0.923f, 0.548f));
 
-            AddPhoneTab(tabs, PrototypePhoneAppController.Tab.Reviews, "评价");
-            AddPhoneTab(tabs, PrototypePhoneAppController.Tab.Diary, "日记");
-            AddPhoneTab(tabs, PrototypePhoneAppController.Tab.Moments, "朋友圈");
-            AddPhoneTab(tabs, PrototypePhoneAppController.Tab.Summary, "结算");
+            var titleCover = CreatePanel(phonePanel, "PhoneTitleCover", new Vector2(0.36f, 0.76f), new Vector2(0.78f, 0.84f));
+            var titleCoverImage = titleCover.gameObject.AddComponent<Image>();
+            titleCoverImage.color = new Color32(245, 238, 228, 255);
+            titleCoverImage.raycastTarget = false;
+            phoneTitleText = CreateText(titleCover, "PhoneTitle", 32, FontStyle.Bold, PrototypeUiTheme.Ink);
+            phoneTitleText.alignment = TextAnchor.MiddleCenter;
+            phoneTitleText.raycastTarget = false;
+            PlaceFull(phoneTitleText.GetComponent<RectTransform>(), new RectOffset(4, 4, 0, 0));
 
-            var viewport = CreatePanel(phoneSafeArea, "Viewport", new Vector2(0, 0), new Vector2(1, 1));
-            var viewportElement = viewport.gameObject.AddComponent<LayoutElement>();
-            viewportElement.flexibleHeight = 1;
-            var viewportImage = viewport.gameObject.AddComponent<Image>();
-            viewportImage.color = new Color32(244, 243, 238, 255);
-            var mask = viewport.gameObject.AddComponent<Mask>();
-            mask.showMaskGraphic = true;
-
-            phoneScrollContent = CreatePanel(viewport, "Content", new Vector2(0, 1), new Vector2(1, 1));
-            phoneScrollContent.pivot = new Vector2(0.5f, 1f);
-            phoneScrollContent.offsetMin = new Vector2(14, 0);
-            phoneScrollContent.offsetMax = new Vector2(-14, 0);
-            var contentLayout = phoneScrollContent.gameObject.AddComponent<VerticalLayoutGroup>();
-            contentLayout.padding = new RectOffset(0, 0, 14, 14);
-            contentLayout.childControlWidth = true;
-            contentLayout.childControlHeight = true;
-            contentLayout.childForceExpandWidth = true;
-            contentLayout.childForceExpandHeight = false;
-            var contentSize = phoneScrollContent.gameObject.AddComponent<ContentSizeFitter>();
-            contentSize.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-            phoneBodyText = CreateText(phoneScrollContent, "Body", 20, FontStyle.Normal, PrototypeUiTheme.Ink);
+            var contentPanel = CreatePanel(phonePanel, "PhoneContent", new Vector2(0.10f, 0.07f), new Vector2(0.90f, 0.38f));
+            var contentImage = contentPanel.gameObject.AddComponent<Image>();
+            contentImage.color = new Color32(254, 249, 240, 248);
+            contentImage.raycastTarget = false;
+            AddOutline(contentPanel.gameObject, 1);
+            phoneBodyText = CreateText(contentPanel, "PhoneBody", 22, FontStyle.Normal, PrototypeUiTheme.Ink);
             phoneBodyText.alignment = TextAnchor.UpperLeft;
-            phoneBodyText.lineSpacing = 1.05f;
-            var bodyRect = phoneBodyText.GetComponent<RectTransform>();
-            bodyRect.anchorMin = new Vector2(0, 1);
-            bodyRect.anchorMax = new Vector2(1, 1);
-            bodyRect.pivot = new Vector2(0.5f, 1f);
-            bodyRect.offsetMin = new Vector2(0, 0);
-            bodyRect.offsetMax = new Vector2(0, -16);
-            var bodySize = phoneBodyText.gameObject.AddComponent<ContentSizeFitter>();
-            bodySize.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-            phoneScrollRect = viewport.gameObject.AddComponent<ScrollRect>();
-            phoneScrollRect.viewport = viewport;
-            phoneScrollRect.content = phoneScrollContent;
-            phoneScrollRect.horizontal = false;
-            phoneScrollRect.vertical = true;
-            phoneScrollRect.movementType = ScrollRect.MovementType.Clamped;
+            phoneBodyText.lineSpacing = 1.08f;
+            phoneBodyText.raycastTarget = false;
+            phoneBodyText.verticalOverflow = VerticalWrapMode.Truncate;
+            PlaceFull(phoneBodyText.GetComponent<RectTransform>(), new RectOffset(34, 34, 28, 28));
 
             phoneApp = new PrototypePhoneAppController(
                 phonePanel,
                 phoneLauncher,
                 closeRect,
-                phoneScrollRect,
+                null,
                 phoneTitleText,
                 phoneBodyText,
                 GetPhoneTabTitle,
@@ -2494,19 +2565,151 @@ namespace APlaceLikeMe.UI
             foreach (var pair in phoneTabButtons)
             {
                 phoneApp.SetTabTarget(pair.Key, pair.Value.GetComponent<RectTransform>(), pair.Value);
+                phoneApp.SetTabSprites(pair.Key, LoadPhoneTabSprite(pair.Key, true), LoadPhoneTabSprite(pair.Key, false));
+            }
+
+            foreach (Transform child in launcherTabs)
+            {
+                if (System.Enum.TryParse<PrototypePhoneAppController.Tab>(child.name, out var tab))
+                {
+                    phoneApp.SetLauncherTabTarget(tab, child.GetComponent<RectTransform>());
+                }
             }
 
             phonePanel.gameObject.SetActive(false);
             phoneLauncher.gameObject.SetActive(false);
         }
 
-        private void AddPhoneTab(Transform parent, PrototypePhoneAppController.Tab tab, string label)
+        private void AddPhoneLauncherTab(
+            Transform parent,
+            PrototypePhoneAppController.Tab tab,
+            Vector2 anchorMin,
+            Vector2 anchorMax)
         {
-            var button = CreateButton(parent, label, () =>
+            CreateHotspotButton(parent, tab.ToString(), anchorMin, anchorMax, () =>
+            {
+                OpenPhone(tab);
+            });
+        }
+
+        private void AddPhoneTab(
+            Transform parent,
+            PrototypePhoneAppController.Tab tab,
+            Vector2 anchorMin,
+            Vector2 anchorMax)
+        {
+            var button = CreateHotspotButton(parent, tab.ToString(), anchorMin, anchorMax, () =>
             {
                 phoneApp?.SelectTab(tab);
             });
+            var stateObject = new GameObject("State", typeof(RectTransform), typeof(Image));
+            stateObject.transform.SetParent(button.transform, false);
+            stateObject.transform.SetAsFirstSibling();
+            var stateRect = stateObject.GetComponent<RectTransform>();
+            stateRect.anchorMin = Vector2.zero;
+            stateRect.anchorMax = Vector2.one;
+            stateRect.offsetMin = Vector2.zero;
+            stateRect.offsetMax = Vector2.zero;
+            var stateImage = stateObject.GetComponent<Image>();
+            stateImage.raycastTarget = false;
+            stateImage.color = Color.clear;
+            button.targetGraphic = stateImage;
+            button.transition = Selectable.Transition.None;
             phoneTabButtons[tab] = button;
+        }
+
+        private static Sprite LoadPhoneTabSprite(PrototypePhoneAppController.Tab tab, bool active)
+        {
+            var stateName = active ? "active" : "nonactive";
+            return Resources.Load<Sprite>($"UI/PhoneTabs/{GetPhoneTabSpriteName(tab)}_{stateName}");
+        }
+
+        private static string GetPhoneTabSpriteName(PrototypePhoneAppController.Tab tab)
+        {
+            return tab switch
+            {
+                PrototypePhoneAppController.Tab.Reviews => "reviews",
+                PrototypePhoneAppController.Tab.Diary => "diary",
+                PrototypePhoneAppController.Tab.Moments => "moments",
+                PrototypePhoneAppController.Tab.Summary => "summary",
+                _ => "reviews"
+            };
+        }
+
+        private static RectTransform CreateAspectFitImagePanel(
+            Transform parent,
+            string name,
+            Vector2 boundsAnchorMin,
+            Vector2 boundsAnchorMax,
+            string resourcePath)
+        {
+            var bounds = CreatePanel(parent, $"{name}Bounds", boundsAnchorMin, boundsAnchorMax);
+            var panel = CreatePanel(bounds, name, Vector2.zero, Vector2.one);
+            var image = panel.gameObject.AddComponent<Image>();
+            image.sprite = Resources.Load<Sprite>(resourcePath);
+            image.preserveAspect = true;
+            image.color = image.sprite == null ? Color.clear : Color.white;
+
+            var fitter = panel.gameObject.AddComponent<AspectRatioFitter>();
+            fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+            fitter.aspectRatio = image.sprite == null ? 1f : image.sprite.rect.width / image.sprite.rect.height;
+            return panel;
+        }
+
+        private static RectTransform CreateFixedImagePanel(
+            Transform parent,
+            string name,
+            Vector2 anchor,
+            Vector2 pivot,
+            Vector2 size,
+            Vector2 anchoredPosition,
+            string resourcePath)
+        {
+            var panel = new GameObject(name, typeof(RectTransform), typeof(Image));
+            panel.transform.SetParent(parent, false);
+            var rectTransform = panel.GetComponent<RectTransform>();
+            rectTransform.anchorMin = anchor;
+            rectTransform.anchorMax = anchor;
+            rectTransform.pivot = pivot;
+            rectTransform.sizeDelta = size;
+            rectTransform.anchoredPosition = anchoredPosition;
+
+            var image = panel.GetComponent<Image>();
+            image.sprite = Resources.Load<Sprite>(resourcePath);
+            image.preserveAspect = true;
+            image.color = image.sprite == null ? Color.clear : Color.white;
+            return rectTransform;
+        }
+
+        private static Button CreateHotspotButton(
+            Transform parent,
+            string name,
+            Vector2 anchorMin,
+            Vector2 anchorMax,
+            UnityEngine.Events.UnityAction onClick)
+        {
+            var buttonObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+            buttonObject.transform.SetParent(parent, false);
+            var rectTransform = buttonObject.GetComponent<RectTransform>();
+            rectTransform.anchorMin = anchorMin;
+            rectTransform.anchorMax = anchorMax;
+            rectTransform.offsetMin = Vector2.zero;
+            rectTransform.offsetMax = Vector2.zero;
+
+            var image = buttonObject.GetComponent<Image>();
+            image.color = new Color32(255, 255, 255, 0);
+
+            var button = buttonObject.GetComponent<Button>();
+            button.targetGraphic = image;
+            button.onClick.AddListener(onClick);
+            var colors = button.colors;
+            colors.normalColor = new Color32(255, 255, 255, 0);
+            colors.highlightedColor = new Color32(255, 234, 176, 95);
+            colors.pressedColor = new Color32(173, 126, 46, 135);
+            colors.selectedColor = new Color32(222, 177, 90, 105);
+            colors.disabledColor = new Color32(255, 255, 255, 0);
+            button.colors = colors;
+            return button;
         }
 
         private static string GetPhoneTabTitle(PrototypePhoneAppController.Tab tab)

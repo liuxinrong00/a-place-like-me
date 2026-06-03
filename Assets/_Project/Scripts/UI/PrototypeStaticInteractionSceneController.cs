@@ -21,8 +21,11 @@ namespace APlaceLikeMe.UI
         private const string LastButtonName = "LastButton";
         private const string NextButtonName = "NextButton";
         private const string ScrollbarName = "Scrollbar";
+        private const string MaterialPurchaseListItemSpritePath = "UI/MaterialPurchase/list_item";
+        private const string MaterialPurchaseHintStripSpritePath = "UI/MaterialPurchase/hint_strip";
         private const string DangerTextColor = "#803020";
         private const int VisibleRows = 3;
+        private const int MaterialRowHeight = 100;
         private const int MaxPurchaseCount = 10;
 
         private static Font cachedDefaultFont;
@@ -46,6 +49,7 @@ namespace APlaceLikeMe.UI
         private Button lastButton;
         private Button nextButton;
         private Scrollbar materialScrollbar;
+        private Sprite materialPurchaseListItemSprite;
         private OrderDefinition selectedOrder;
         private RepairMethodDefinition selectedRepairMethod;
         private MaterialDefinition selectedMaterial;
@@ -164,6 +168,8 @@ namespace APlaceLikeMe.UI
 
         private void InitializeBuyScene()
         {
+            materialStartIndex = 0;
+            purchaseCount = 1;
             BuildMaterialListLayout();
             BuildBuyInfoLayout();
             selectedMaterial = GetAvailableMaterials().FirstOrDefault();
@@ -411,7 +417,7 @@ namespace APlaceLikeMe.UI
                     selectedMaterial = material;
                     statusMessage = "已选择材料。";
                     RenderBuyScene();
-                });
+                }, MaterialRowHeight);
                 SetButtonSelected(button, material == selectedMaterial);
                 listButtons.Add(button);
             }
@@ -442,11 +448,13 @@ namespace APlaceLikeMe.UI
             if (lastButton != null)
             {
                 lastButton.interactable = purchaseCount > 1;
+                SetButtonGraphicAlpha(lastButton, 1f);
             }
 
             if (nextButton != null)
             {
                 nextButton.interactable = purchaseCount < MaxPurchaseCount;
+                SetButtonGraphicAlpha(nextButton, 1f);
             }
         }
 
@@ -508,8 +516,8 @@ namespace APlaceLikeMe.UI
         private void BuildMaterialListLayout()
         {
             var listObject = FindSceneObject(OrderListName);
-            listContentRoot = CreateRuntimeRoot(listObject, "RuntimeMaterialRows", new Vector2(0.08f, 0.21f), new Vector2(0.84f, 0.72f));
-            AddVerticalLayout(listContentRoot, 14);
+            listContentRoot = CreateRuntimeRoot(listObject, "RuntimeMaterialRows", new Vector2(0.12f, 0.26f), new Vector2(0.86f, 0.79f));
+            AddVerticalLayout(listContentRoot, 20);
         }
 
         private void BuildOrderInfoLayout()
@@ -541,15 +549,27 @@ namespace APlaceLikeMe.UI
         private void BuildBuyInfoLayout()
         {
             var infoObject = FindSceneObject(OrderInformationName);
-            infoContentRoot = CreateRuntimeRoot(infoObject, "RuntimeBuyInfo", new Vector2(0.08f, 0.12f), new Vector2(0.92f, 0.78f));
+            infoContentRoot = CreateRuntimeRoot(infoObject, "RuntimeBuyInfo", new Vector2(0.08f, 0.24f), new Vector2(0.92f, 0.78f));
             AddVerticalLayout(infoContentRoot, 12);
-            detailText = CreateRuntimeText(infoContentRoot, "Detail", 20, FontStyle.Normal);
-            detailText.lineSpacing = 0.92f;
+            detailText = CreateRuntimeText(infoContentRoot, "Detail", 26, FontStyle.Normal);
+            detailText.lineSpacing = 1.02f;
             detailText.verticalOverflow = VerticalWrapMode.Truncate;
             AddLayout(detailText.gameObject, 0, 1f);
-            statusText = CreateRuntimeText(infoContentRoot, "Status", 20, FontStyle.Bold);
-            statusText.alignment = TextAnchor.LowerLeft;
-            AddLayout(statusText.gameObject, 78, 0f);
+
+            var statusStrip = CreateRuntimeRoot(infoObject, "RuntimeBuyStatusStrip", new Vector2(0.08f, 0.10f), new Vector2(0.92f, 0.19f));
+            var statusStripImage = statusStrip.gameObject.AddComponent<Image>();
+            var statusStripSprite = Resources.Load<Sprite>(MaterialPurchaseHintStripSpritePath);
+            statusStripImage.sprite = statusStripSprite;
+            statusStripImage.type = statusStripSprite == null ? Image.Type.Simple : Image.Type.Sliced;
+            statusStripImage.color = statusStripSprite == null ? Color.clear : Color.white;
+
+            statusText = CreateRuntimeText(statusStrip, "Status", 24, FontStyle.Bold);
+            statusText.alignment = TextAnchor.MiddleLeft;
+            var statusRect = statusText.GetComponent<RectTransform>();
+            statusRect.anchorMin = Vector2.zero;
+            statusRect.anchorMax = Vector2.one;
+            statusRect.offsetMin = new Vector2(26, 0);
+            statusRect.offsetMax = new Vector2(-26, 0);
         }
 
         private RectTransform CreateRuntimeRoot(GameObject parentObject, string name, Vector2 anchorMin, Vector2 anchorMax)
@@ -592,30 +612,38 @@ namespace APlaceLikeMe.UI
             var buttonObject = new GameObject("RuntimeButton", typeof(RectTransform), typeof(Image), typeof(Button));
             buttonObject.transform.SetParent(parent, false);
             var image = buttonObject.GetComponent<Image>();
-            image.color = PrototypeUiTheme.ListItem;
+            var runtimeListItemSprite = GetRuntimeListItemSprite();
+            image.sprite = runtimeListItemSprite;
+            image.type = runtimeListItemSprite == null ? Image.Type.Simple : Image.Type.Sliced;
+            image.color = runtimeListItemSprite == null ? PrototypeUiTheme.ListItem : Color.white;
 
             var button = buttonObject.GetComponent<Button>();
             button.targetGraphic = image;
             BindButtonAction(button, onClick);
             var colors = button.colors;
-            colors.normalColor = PrototypeUiTheme.ListItem;
-            colors.highlightedColor = PrototypeUiTheme.ListItemHover;
-            colors.pressedColor = PrototypeUiTheme.ListItemSelected;
-            colors.selectedColor = PrototypeUiTheme.ListItemSelected;
+            colors.normalColor = runtimeListItemSprite == null ? PrototypeUiTheme.ListItem : Color.white;
+            colors.highlightedColor = runtimeListItemSprite == null ? PrototypeUiTheme.ListItemHover : new Color32(255, 244, 217, 255);
+            colors.pressedColor = runtimeListItemSprite == null ? PrototypeUiTheme.ListItemSelected : new Color32(238, 202, 150, 255);
+            colors.selectedColor = runtimeListItemSprite == null ? PrototypeUiTheme.ListItemSelected : new Color32(255, 238, 196, 255);
             colors.disabledColor = PrototypeUiTheme.CardUnavailable;
             button.colors = colors;
 
-            var text = CreateRuntimeText(buttonObject.transform, "Label", 18, FontStyle.Bold);
+            var text = CreateRuntimeText(buttonObject.transform, "Label", GetRuntimeButtonFontSize(minHeight), FontStyle.Bold);
             text.text = label;
             text.alignment = TextAnchor.MiddleLeft;
             var textRect = text.GetComponent<RectTransform>();
             textRect.anchorMin = Vector2.zero;
             textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = new Vector2(18, 8);
-            textRect.offsetMax = new Vector2(-18, -8);
+            textRect.offsetMin = minHeight >= MaterialRowHeight ? new Vector2(24, 10) : new Vector2(18, 8);
+            textRect.offsetMax = minHeight >= MaterialRowHeight ? new Vector2(-18, -10) : new Vector2(-18, -8);
 
             AddLayout(buttonObject, minHeight, 1f);
             return button;
+        }
+
+        private static int GetRuntimeButtonFontSize(float minHeight)
+        {
+            return minHeight >= MaterialRowHeight ? 32 : 18;
         }
 
         private Text CreateCountText()
@@ -670,8 +698,38 @@ namespace APlaceLikeMe.UI
             var image = button.GetComponent<Image>();
             if (image != null)
             {
-                image.color = selected ? PrototypeUiTheme.ListItemSelected : PrototypeUiTheme.ListItem;
+                image.color = image.sprite == null
+                    ? (selected ? PrototypeUiTheme.ListItemSelected : PrototypeUiTheme.ListItem)
+                    : (selected ? new Color32(255, 238, 196, 255) : Color.white);
             }
+        }
+
+        private static void SetButtonGraphicAlpha(Button button, float alpha)
+        {
+            var image = button.GetComponent<Image>();
+            if (image == null)
+            {
+                return;
+            }
+
+            var color = image.color;
+            color.a = alpha;
+            image.color = color;
+        }
+
+        private Sprite GetRuntimeListItemSprite()
+        {
+            if (sceneName != BuySceneName)
+            {
+                return null;
+            }
+
+            if (materialPurchaseListItemSprite == null)
+            {
+                materialPurchaseListItemSprite = Resources.Load<Sprite>(MaterialPurchaseListItemSpritePath);
+            }
+
+            return materialPurchaseListItemSprite;
         }
 
         private void SetButtonsInteractable(bool interactable)
@@ -989,7 +1047,7 @@ namespace APlaceLikeMe.UI
         private string FormatMaterialButton(MaterialDefinition material)
         {
             host.State.MaterialStock.TryGetValue(material, out var currentAmount);
-            var price = GetPurchaseCost(1);
+            var price = material == null ? 0 : material.DefaultPrice;
             var amount = GetPurchaseAmount(1);
             return $"{material.DisplayName}\n库存 {currentAmount} / +{amount} 需要 {price} 金币";
         }

@@ -16,6 +16,8 @@ namespace APlaceLikeMe.UI
 
         private readonly Dictionary<Tab, RectTransform> tabRects = new();
         private readonly Dictionary<Tab, Button> tabButtons = new();
+        private readonly Dictionary<Tab, TabSprites> tabSprites = new();
+        private readonly Dictionary<Tab, RectTransform> launcherTabRects = new();
         private readonly System.Func<Tab, string> getTitle;
         private readonly System.Func<Tab, string> getBody;
         private readonly System.Action close;
@@ -27,6 +29,18 @@ namespace APlaceLikeMe.UI
         private Text titleText;
         private Text bodyText;
         private Tab selectedTab = Tab.Reviews;
+
+        private readonly struct TabSprites
+        {
+            public TabSprites(Sprite active, Sprite nonactive)
+            {
+                Active = active;
+                Nonactive = nonactive;
+            }
+
+            public Sprite Active { get; }
+            public Sprite Nonactive { get; }
+        }
 
         public PrototypePhoneAppController(
             RectTransform panel,
@@ -58,6 +72,16 @@ namespace APlaceLikeMe.UI
             tabButtons[tab] = button;
         }
 
+        public void SetTabSprites(Tab tab, Sprite active, Sprite nonactive)
+        {
+            tabSprites[tab] = new TabSprites(active, nonactive);
+        }
+
+        public void SetLauncherTabTarget(Tab tab, RectTransform rectTransform)
+        {
+            launcherTabRects[tab] = rectTransform;
+        }
+
         public bool IsOpen()
         {
             return panel != null && panel.gameObject.activeSelf;
@@ -76,6 +100,17 @@ namespace APlaceLikeMe.UI
             if (launcher == null || !launcher.gameObject.activeInHierarchy)
             {
                 return false;
+            }
+
+            foreach (var pair in launcherTabRects)
+            {
+                if (!RectTransformUtility.RectangleContainsScreenPoint(pair.Value, screenPosition, null))
+                {
+                    continue;
+                }
+
+                Open(pair.Key);
+                return true;
             }
 
             if (!RectTransformUtility.RectangleContainsScreenPoint(launcher, screenPosition, null))
@@ -116,12 +151,17 @@ namespace APlaceLikeMe.UI
 
         public void Open()
         {
+            Open(Tab.Reviews);
+        }
+
+        public void Open(Tab initialTab)
+        {
             if (panel == null)
             {
                 return;
             }
 
-            selectedTab = Tab.Reviews;
+            selectedTab = initialTab;
             panel.gameObject.SetActive(true);
             Render();
         }
@@ -151,19 +191,24 @@ namespace APlaceLikeMe.UI
             bodyText.text = getBody == null ? string.Empty : getBody(selectedTab);
             foreach (var pair in tabButtons)
             {
-                var selected = pair.Key == selectedTab;
-                var color = selected ? PrototypeUiTheme.ListItemHover : PrototypeUiTheme.Card;
-                var image = pair.Value.GetComponent<Image>();
-                if (image != null)
+                var image = pair.Value.targetGraphic as Image;
+                if (image == null)
                 {
-                    image.color = color;
+                    continue;
                 }
 
-                var colors = pair.Value.colors;
-                colors.normalColor = color;
-                colors.highlightedColor = PrototypeUiTheme.PrimaryHover;
-                colors.pressedColor = PrototypeUiTheme.PaperMuted;
-                pair.Value.colors = colors;
+                var selected = pair.Key == selectedTab;
+                if (tabSprites.TryGetValue(pair.Key, out var sprites))
+                {
+                    var sprite = selected ? sprites.Active : sprites.Nonactive;
+                    sprite ??= selected ? sprites.Nonactive : sprites.Active;
+                    image.sprite = sprite;
+                    image.color = sprite == null ? Color.clear : Color.white;
+                    continue;
+                }
+
+                image.sprite = null;
+                image.color = Color.clear;
             }
 
             if (scrollRect != null)
