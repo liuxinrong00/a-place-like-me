@@ -24,7 +24,8 @@ namespace APlaceLikeMe.UI
         {
             CloseInteraction,
             CloseOverlay,
-            GoNextDay
+            GoNextDay,
+            EnterBedroom
         }
 
         private const string StoreSceneName = "Store";
@@ -35,6 +36,7 @@ namespace APlaceLikeMe.UI
         private const string FixSceneName = "Fix";
         private const string BuySceneName = "Buy";
         private const string ChooseUiSceneName = "ChooseUIScene";
+        private const string InformationUiSceneName = "InformationUI";
         private const string SleepChoiceSceneName = "SleepChoice";
         private const string LegacySleepChoiceSceneName = "SleepChioce";
         private const string RepairResultSceneName = "ShoppingInformation";
@@ -95,6 +97,15 @@ namespace APlaceLikeMe.UI
                 new[] { ChooseUiSceneName },
                 "需要休息到明天才能开店哦",
                 new[] { new PrototypeSceneButtonDefinition(CloseButtonName, PrototypeSceneButtonAction.CloseInteraction) }),
+            new(
+                new[] { InformationUiSceneName },
+                null,
+                new[]
+                {
+                    new PrototypeSceneButtonDefinition(ChooseYesButtonName, PrototypeSceneButtonAction.EnterBedroom),
+                    new PrototypeSceneButtonDefinition(ChooseNoButtonName, PrototypeSceneButtonAction.CloseInteraction),
+                    new PrototypeSceneButtonDefinition(CloseButtonName, PrototypeSceneButtonAction.CloseInteraction)
+                }),
             new(
                 new[] { SleepChoiceSceneName, LegacySleepChoiceSceneName },
                 "现在休息到明天吗？",
@@ -345,6 +356,15 @@ namespace APlaceLikeMe.UI
             Render();
         }
 
+        public void EnterBedroomFromInformationScene()
+        {
+            suppressNextInteractInput = true;
+            bedroomRestedLightOn = false;
+            UnloadInteractionSceneIfLoaded();
+            feedbackText.text = "你进入了卧室。床可以结束当天，桌子可以买材料。";
+            SwitchRoom(RoomMode.Bedroom, EnterStoreMarkerName, EnterStoreRoomMarkerName);
+        }
+
         public void CloseOverlaySceneFromPanel()
         {
             suppressNextInteractInput = true;
@@ -488,9 +508,7 @@ namespace APlaceLikeMe.UI
             switch (interactable.Kind)
             {
                 case PrototypeSceneInteractionKind.StoreBedroomDoor:
-                    bedroomRestedLightOn = false;
-                    feedbackText.text = "你进入了卧室。床可以结束当天，桌子可以买材料。";
-                    SwitchRoom(RoomMode.Bedroom, EnterStoreMarkerName, EnterStoreRoomMarkerName);
+                    OpenInteractionScene(InformationUiSceneName, PrototypeInteractionPanelMode.NightSummary);
                     break;
                 case PrototypeSceneInteractionKind.BedroomStoreDoor:
                     if (canReturnToStoreAfterRest)
@@ -1879,6 +1897,7 @@ namespace APlaceLikeMe.UI
             return action switch
             {
                 PrototypeSceneButtonAction.GoNextDay => GoNextDayFromPanel,
+                PrototypeSceneButtonAction.EnterBedroom => EnterBedroomFromInformationScene,
                 PrototypeSceneButtonAction.CloseOverlay => CloseOverlaySceneFromPanel,
                 _ => CloseInteractionSceneFromPanel
             };
