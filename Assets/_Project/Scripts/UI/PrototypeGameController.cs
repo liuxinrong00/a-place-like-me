@@ -180,6 +180,22 @@ namespace APlaceLikeMe.UI
         public bool IsOverlayOpen => IsOverlaySceneLoaded();
         public bool AreWorldControlsLocked => isRoomSwitching || IsInteractionSceneLoaded() || IsOverlaySceneLoaded() || IsConfirmationOpen() || IsPhoneOpen();
 
+        public static void PrepareNewGame(PrototypeGameConfig prototypeConfig)
+        {
+            var controller = Active;
+            if (controller == null)
+            {
+                var controllerObject = new GameObject(nameof(PrototypeGameController));
+                DontDestroyOnLoad(controllerObject);
+                controller = controllerObject.AddComponent<PrototypeGameController>();
+            }
+
+            controller.config = prototypeConfig;
+            controller.hasStartupRoomOverride = true;
+            controller.startupRoomOverride = RoomMode.Store;
+            controller.startupSpawnOverride = StoreSpawn;
+        }
+
         private void Awake()
         {
             if (Active != null && Active != this)
