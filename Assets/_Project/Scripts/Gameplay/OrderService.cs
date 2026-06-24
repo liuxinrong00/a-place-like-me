@@ -14,17 +14,45 @@ namespace APlaceLikeMe.Gameplay
                 return new List<OrderDefinition>();
             }
 
-            var startIndex = ((day - 1) * ordersPerDay) % orderPool.Count;
-            return Enumerable.Range(0, ordersPerDay)
-                .Select(offset => orderPool[(startIndex + offset) % orderPool.Count])
+            return GetRotatingOrders(orderPool, day, ordersPerDay);
+        }
+
+        public IReadOnlyList<OrderDefinition> GetOrdersForDay(
+            IReadOnlyList<OrderDefinition> orderPool,
+            GameSessionState state,
+            int day,
+            int ordersPerDay,
+            int specialOrdersPerRefreshDay,
+            int specialOrderRefreshIntervalDays)
+        {
+            if (orderPool == null || orderPool.Count == 0)
+            {
+                return new List<OrderDefinition>();
+            }
+
+            var normalOrders = orderPool
+                .Where(order => order != null && !order.IsSpecialOrder)
                 .ToList();
+            var selectedOrders = GetRotatingOrders(normalOrders, day, ordersPerDay).ToList();
+            selectedOrders.AddRange(GetSpecialOrdersForDay(orderPool, state, day, specialOrdersPerRefreshDay, specialOrderRefreshIntervalDays));
+            return selectedOrders;
         }
 
         public OrderResult TryAcceptOrder(GameSessionState state, OrderDefinition order)
         {
+            return TryAcceptOrder(state, order, int.MaxValue);
+        }
+
+        public OrderResult TryAcceptOrder(GameSessionState state, OrderDefinition order, int maxSpecialOrdersPerDay)
+        {
             if (order == null)
             {
                 return new OrderResult(false, "请选择一个订单。");
+            }
+
+            if (order.IsSpecialOrder && state.TodayAcceptedSpecialOrderCount >= maxSpecialOrdersPerDay)
+            {
+                return new OrderResult(false, $"今天特殊订单最多只能接 {maxSpecialOrdersPerDay} 个。");
             }
 
             if (!state.AcceptOrder(order))
@@ -73,14 +101,14 @@ namespace APlaceLikeMe.Gameplay
             }
 
             var rewardCoins = GetFinalRewardCoins(order, repairMethod);
-            var materialCost = GetFinalMaterialCost(order, repairMethod);
             var authenticityDelta = GetFinalAuthenticityDelta(order, repairMethod);
             state.SpendEnergy(energyCost);
             state.AddCoins(rewardCoins);
             state.AddAuthenticity(authenticityDelta);
             var feedback = GetMethodFeedback(order, repairMethod, authenticityDelta);
-            state.CompleteOrder(order, feedback);
-            return new OrderResult(true, $"完成订单：{order.DisplayName}\n方式：{repairMethod.DisplayName}\n收入 +{rewardCoins}，净收益 {rewardCoins - materialCost}，真实度 {FormatSigned(authenticityDelta)}\n{feedback}");
+            var diaryEntry = BuildOrderDiaryEntry(order, repairMethod, authenticityDelta);
+            state.CompleteOrder(order, order.FeedbackText, order.MomentText, diaryEntry);
+            return new OrderResult(true, $"完成订单：{order.DisplayName}\n方式：{repairMethod.DisplayName}\n\n{feedback}");
         }
 
         public OrderResult TryBuyNightSupply(GameSessionState state, MaterialDefinition material, int cost, int amount)
@@ -173,6 +201,64 @@ namespace APlaceLikeMe.Gameplay
             return order.RepairProfiles.FirstOrDefault(profile => profile != null && profile.repairMethodType == repairMethod.RepairMethodType);
         }
 
+        private static IReadOnlyList<OrderDefinition> GetRotatingOrders(
+            IReadOnlyList<OrderDefinition> orders,
+            int day,
+            int ordersPerDay)
+        {
+            if (orders == null || orders.Count == 0 || ordersPerDay <= 0)
+            {
+                return new List<OrderDefinition>();
+            }
+
+            var startIndex = ((day - 1) * ordersPerDay) % orders.Count;
+            return Enumerable.Range(0, ordersPerDay)
+                .Select(offset => orders[(startIndex + offset) % orders.Count])
+                .ToList();
+        }
+
+        private static IReadOnlyList<OrderDefinition> GetSpecialOrdersForDay(
+            IReadOnlyList<OrderDefinition> orderPool,
+            GameSessionState state,
+            int day,
+            int specialOrdersPerRefreshDay,
+            int specialOrderRefreshIntervalDays)
+        {
+            if (state == null || specialOrdersPerRefreshDay <= 0 || !IsSpecialOrderRefreshDay(day, specialOrderRefreshIntervalDays))
+            {
+                return new List<OrderDefinition>();
+            }
+
+            return orderPool
+                .Where(order => IsUnlockedSpecialOrder(order, state))
+                .OrderBy(order => order.SpecialStoryId)
+                .ThenBy(order => order.SpecialStorySequence)
+                .Take(specialOrdersPerRefreshDay)
+                .ToList();
+        }
+
+        private static bool IsSpecialOrderRefreshDay(int day, int specialOrderRefreshIntervalDays)
+        {
+            var interval = MathfMax(1, specialOrderRefreshIntervalDays);
+            return day > 0 && (day - 1) % interval == 0;
+        }
+
+        private static bool IsUnlockedSpecialOrder(OrderDefinition order, GameSessionState state)
+        {
+            if (order == null || !order.IsSpecialOrder || string.IsNullOrWhiteSpace(order.SpecialStoryId))
+            {
+                return false;
+            }
+
+            var sequence = order.SpecialStorySequence;
+            if (sequence <= 0 || state.HasCompletedSpecialStorySequence(order.SpecialStoryId, sequence))
+            {
+                return false;
+            }
+
+            return sequence == 1 || state.HasCompletedSpecialStorySequence(order.SpecialStoryId, sequence - 1);
+        }
+
         private static Dictionary<MaterialDefinition, int> MergeRequiredMaterials(OrderDefinition order, RepairMethodDefinition repairMethod)
         {
             var requiredMaterials = new Dictionary<MaterialDefinition, int>();
@@ -199,7 +285,7 @@ namespace APlaceLikeMe.Gameplay
                 return 0;
             }
 
-            return IsPreferredRepairMethod(order.Customer.CustomerType, repairMethod.RepairMethodType) ? 1 : 0;
+            return IsPreferredRepairMethod(order, repairMethod.RepairMethodType) ? 1 : 0;
         }
 
         private static int GetCustomerPreferenceAuthenticityBonus(OrderDefinition order, RepairMethodDefinition repairMethod)
@@ -209,7 +295,22 @@ namespace APlaceLikeMe.Gameplay
                 return 0;
             }
 
-            return IsPreferredRepairMethod(order.Customer.CustomerType, repairMethod.RepairMethodType) ? 1 : -1;
+            return IsPreferredRepairMethod(order, repairMethod.RepairMethodType) ? 1 : -1;
+        }
+
+        private static bool IsPreferredRepairMethod(OrderDefinition order, RepairMethodType repairMethodType)
+        {
+            if (order == null)
+            {
+                return false;
+            }
+
+            if (order.OverridePreferredRepairMethod)
+            {
+                return order.PreferredRepairMethodType == repairMethodType;
+            }
+
+            return order.Customer != null && IsPreferredRepairMethod(order.Customer.CustomerType, repairMethodType);
         }
 
         private static bool IsPreferredRepairMethod(CustomerType customerType, RepairMethodType repairMethodType)
@@ -225,9 +326,76 @@ namespace APlaceLikeMe.Gameplay
 
         private static string GetMethodFeedback(OrderDefinition order, RepairMethodDefinition repairMethod, int authenticityDelta)
         {
-            var preferred = order.Customer != null && IsPreferredRepairMethod(order.Customer.CustomerType, repairMethod.RepairMethodType);
+            var preferred = IsPreferredRepairMethod(order, repairMethod.RepairMethodType);
             var preferenceText = preferred ? "顾客很喜欢这个处理方向。" : "顾客接受了结果，但似乎还在想象另一种可能。";
-            return $"{preferenceText}\n{order.FeedbackText}\n真实感变化：{FormatSigned(authenticityDelta)}";
+            return string.IsNullOrWhiteSpace(order.FeedbackText)
+                ? preferenceText
+                : $"{preferenceText}\n{order.FeedbackText}";
+        }
+
+        private static string BuildOrderDiaryEntry(OrderDefinition order, RepairMethodDefinition repairMethod, int authenticityDelta)
+        {
+            if (order == null)
+            {
+                return string.Empty;
+            }
+
+            if (order.IsSpecialOrder)
+            {
+                var specialDiary = BuildSpecialDiaryEntry(order);
+                if (!string.IsNullOrWhiteSpace(specialDiary))
+                {
+                    return specialDiary;
+                }
+            }
+
+            return BuildNormalDiaryEntry(order, repairMethod, authenticityDelta);
+        }
+
+        private static string BuildSpecialDiaryEntry(OrderDefinition order)
+        {
+            var lines = new List<string>();
+            if (!string.IsNullOrWhiteSpace(order.TodayStoryText))
+            {
+                lines.Add("今日故事");
+                lines.Add(order.TodayStoryText.Trim());
+            }
+
+            if (!string.IsNullOrWhiteSpace(order.DiaryText))
+            {
+                if (lines.Count > 0)
+                {
+                    lines.Add(string.Empty);
+                }
+
+                lines.Add("夜晚日记");
+                lines.Add(order.DiaryText.Trim());
+            }
+
+            return string.Join("\n", lines);
+        }
+
+        private static string BuildNormalDiaryEntry(OrderDefinition order, RepairMethodDefinition repairMethod, int authenticityDelta)
+        {
+            var itemName = string.IsNullOrWhiteSpace(order.DisplayName) ? "旧物" : order.DisplayName;
+            var methodName = repairMethod == null || string.IsNullOrWhiteSpace(repairMethod.DisplayName)
+                ? "修补"
+                : repairMethod.DisplayName;
+            var orderText = order.Difficulty switch
+            {
+                OrderDifficulty.Easy => $"今天修的是{itemName}。坏掉的地方很清楚，手一伸过去就知道该从哪里开始。收工具时，桌面只乱了一小块。",
+                OrderDifficulty.Normal => $"今天在{itemName}上花的时间比预计久。{methodName}不是最省力的做法，但做到一半时，手上的节奏慢慢稳了下来。",
+                OrderDifficulty.Hard => $"今天那件{itemName}把时间拉得很长。细小的缝、旧漆下面的颜色、卡住的地方，都要一点点等它松开。",
+                _ => $"今天修了一件旧物。它没有说什么，只是在工作台上安静地变轻了一点。"
+            };
+            var authenticityText = authenticityDelta switch
+            {
+                > 0 => "交付前，我没有把所有痕迹都急着藏起来。那一小会儿，店里像是比早上宽了一点。",
+                < 0 => "交付前，我还是多看了几次顾客的表情。手机屏幕暗下去以后，那种紧绷才慢慢退开。",
+                _ => "交付前后都很平静。也许有些日子就是这样，轻轻过去，却没有白过。"
+            };
+
+            return $"夜晚日记\n{orderText}\n\n{authenticityText}";
         }
 
         private static string FormatSigned(int value)

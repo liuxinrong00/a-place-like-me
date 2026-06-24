@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_LiangXiao_04
+  m_EditorClassIdentifier: 
+  id: special_liang_xiao_04
+  displayName: "特殊订单：装满打卡条的铁饭盒"
+  itemType: "老式铁饭盒，盒盖变形，里面夹着工资条、排班表和打卡小票。"
+  damageLevel: "装满打卡条的铁饭盒"
+  difficulty: 1
+  customer: {fileID: 11400000, guid: 5208664e0a8a836e57453003465ad6e6, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+    amount: 2
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 3
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 47
+    energyCost: 23
+    rewardCoins: 42
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 35
+    energyCost: 20
+    rewardCoins: 43
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 3
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 47
+    energyCost: 22
+    rewardCoins: 41
+  energyCost: 20
+  rewardCoins: 43
+  isSpecialOrder: 1
+  specialStoryId: liang_xiao
+  specialStorySequence: 4
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 1
+  customerNote: "饭盒要修好，纸条都留在里面。"
+  feedbackText: "饭盒修得能开能合，里面的纸条也都留好了。旧痕没有乱糟糟地堆着，像被认真收过一次。"
+  momentText: "梁骁：把饭盒里的纸条重新排了排。不是每一天都值得记住，但有几天，确实不该随便丢掉。"
+  todayStoryText: "第四次来时，梁骁明显疲惫。他说这些纸条“都得留着”，语气像在交代证据。饭盒恢复开合，纸条作为旧痕的一部分被保留下来。交付前，他自己把几张纸条重新排了顺序：第一天入职、最难的一天、同事写的“今天辛苦了”。"
+  diaryText: "铁饭盒里塞着很多纸条，我只把它们取出来一会儿，又按原来的折痕放回去。盒盖合上时还有一点钝响。不是所有东西都要展开看清楚，但至少今天，它们不用再从缝里掉出来。"

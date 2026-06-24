@@ -23,11 +23,38 @@ MonoBehaviour:
   - {fileID: 11400000, guid: cd0947243e67380f7246c1efc5fd2382, type: 2}
   - {fileID: 11400000, guid: c37e0fe00bc03b87e7dcbb14e98c426d, type: 2}
   - {fileID: 11400000, guid: 0e1efab7d3cb9ab1584169fc1a7546b8, type: 2}
+  - {fileID: 11400000, guid: f85df5141b7c2f31609764bb7f82c32a, type: 2}
+  - {fileID: 11400000, guid: 5a2d071135a4fe2b965da075b1cd6702, type: 2}
+  - {fileID: 11400000, guid: 7842d0df0950f085600d9f693aaa371d, type: 2}
+  - {fileID: 11400000, guid: 99ee1f2a51084171de032205b161f843, type: 2}
+  - {fileID: 11400000, guid: ea834ef36b75e29575eee4fd08d3c81c, type: 2}
+  - {fileID: 11400000, guid: dbfe3fbf58ca789a14f219632f509808, type: 2}
+  - {fileID: 11400000, guid: 29a1da9c9760d6a8e2cc6b27ca5812b3, type: 2}
+  - {fileID: 11400000, guid: 8a135e20fd254506904f7e35ccac746c, type: 2}
+  - {fileID: 11400000, guid: f327f5560048ed2ace6994a190d6e653, type: 2}
+  - {fileID: 11400000, guid: 5fe2494adb9fb838ca25f180834df4f1, type: 2}
+  - {fileID: 11400000, guid: 9dc866953a6a16a7acd1e36b33d54945, type: 2}
+  - {fileID: 11400000, guid: 07cffedf7efa9af9d17be78cf2d12571, type: 2}
+  - {fileID: 11400000, guid: 16ddc5589a57b12a03f1a5c57448bf36, type: 2}
+  - {fileID: 11400000, guid: 0aa970a80462d7ed1a1535347ae36bc8, type: 2}
+  - {fileID: 11400000, guid: 5eacbb4c0d5f9542ceb0b532c5b48e62, type: 2}
+  - {fileID: 11400000, guid: 29117a3f111de7c914523a55e6b7c003, type: 2}
+  - {fileID: 11400000, guid: 0b6e35e4bde058e9d3271fefab40d56d, type: 2}
+  - {fileID: 11400000, guid: 87d8b51ec3ec99a6c42bda8298de998f, type: 2}
+  - {fileID: 11400000, guid: 102f3eafd419334eb09833b1549ec96a, type: 2}
+  - {fileID: 11400000, guid: 701e5b7054b598ab70d25c4aee16bf1a, type: 2}
+  - {fileID: 11400000, guid: a228b6253c714df263e82ac4f0bd88f1, type: 2}
+  - {fileID: 11400000, guid: aaac7b1c51087e5c239ad8613b1cd966, type: 2}
+  - {fileID: 11400000, guid: 704e24f9e283db587cac9c8e1d678d46, type: 2}
+  - {fileID: 11400000, guid: f0a05859bfc7444fcfe7032b74b09006, type: 2}
+  - {fileID: 11400000, guid: 1940f9e57750d713cfedf569106caa5c, type: 2}
   repairMethods:
   - {fileID: 11400000, guid: 6aa9f1d2ef8740e88a4c0c9407a0a101, type: 2}
   - {fileID: 11400000, guid: 6aa9f1d2ef8740e88a4c0c9407a0a102, type: 2}
   - {fileID: 11400000, guid: 6aa9f1d2ef8740e88a4c0c9407a0a103, type: 2}
   ordersPerDay: 9
-  prototypeDays: 3
+  specialOrdersPerRefreshDay: 2
+  specialOrderRefreshIntervalDays: 2
+  prototypeDays: 0
   nightSupplyCost: 6
   nightSupplyAmount: 6

@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_LiangXiao_05
+  m_EditorClassIdentifier: 
+  id: special_liang_xiao_05
+  displayName: "特殊订单：该继续走路的旧工鞋"
+  itemType: "一双旧工鞋，鞋面有划痕，鞋底磨损，后跟踩变形。"
+  damageLevel: "该继续走路的旧工鞋"
+  difficulty: 2
+  customer: {fileID: 11400000, guid: 5208664e0a8a836e57453003465ad6e6, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+    amount: 2
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 1
+    materialCost: 33
+    energyCost: 25
+    rewardCoins: 45
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 21
+    energyCost: 22
+    rewardCoins: 46
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 3
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 26
+    energyCost: 24
+    rewardCoins: 44
+  energyCost: 22
+  rewardCoins: 46
+  isSpecialOrder: 1
+  specialStoryId: liang_xiao
+  specialStorySequence: 5
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 1
+  customerNote: "修好它，但别把鞋面旧痕处理掉。"
+  feedbackText: "鞋修好了，旧划痕还在，穿起来不磨脚。谢谢你让它能继续走，而不是只停在以前。"
+  momentText: "梁骁：旧工鞋今天又能走路了。痕迹还在，脚不疼了。明天去夜校，应该赶得上。"
+  todayStoryText: "最后一次来时，梁骁没有再说“随便”。他清楚地说鞋面划痕要留，鞋子要能继续穿。旧工鞋恢复可穿状态，鞋面痕迹仍明显存在。取货后，他在店门口换上鞋，走了两步又回来，说：“痕迹还在，脚不疼了。这样挺好。”"
+  diaryText: "旧工鞋的后跟被踩得很低，像走路的人总赶时间。我补了鞋底，没有遮掉鞋面那些划痕。放到门口等取件时，两只鞋并排站着，忽然不像是在等修理，像是在等出发。"

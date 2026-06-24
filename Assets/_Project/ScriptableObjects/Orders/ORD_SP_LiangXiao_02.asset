@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_LiangXiao_02
+  m_EditorClassIdentifier: 
+  id: special_liang_xiao_02
+  displayName: "特殊订单：开线的工具腰包"
+  itemType: "帆布工具腰包，边角磨白，内袋沾着机油，外面有一块歪斜名牌。"
+  damageLevel: "开线的工具腰包"
+  difficulty: 0
+  customer: {fileID: 11400000, guid: 5208664e0a8a836e57453003465ad6e6, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 16
+    energyCost: 19
+    rewardCoins: 36
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    materialCost: 10
+    energyCost: 16
+    rewardCoins: 37
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 21
+    energyCost: 18
+    rewardCoins: 35
+  energyCost: 16
+  rewardCoins: 37
+  isSpecialOrder: 1
+  specialStoryId: liang_xiao
+  specialStorySequence: 2
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 1
+  customerNote: "把开线处缝牢，但不要洗油污，也不要换掉名牌。"
+  feedbackText: "腰包缝得很结实，油污和名牌都没动。看着还是旧的，但终于不用担心工具掉出来了。"
+  momentText: "梁骁：腰包补好了，名牌还在。别人觉得破不破先不管，至少我知道它跟着我跑过哪些地方。"
+  todayStoryText: "第二次来时，他比上次更急，说下午还要去修仓库货架。腰包裂口很大，再不修会掉工具。他一边说“随便缝两针”，一边盯着名牌，怕它被换掉。腰包变得结实，但油污、磨白边角和名牌都还在。取走时他问：“这样别人会不会觉得太破？”问完自己先笑了，笑得有点不好意思。"
+  diaryText: "腰包的线口比想象中长，油污渗进布里，针穿过去时有点涩。那块歪斜名牌我避开了好几次，像避开一小块不能碰的地方。缝完后，它还是旧的，只是不再散开。"

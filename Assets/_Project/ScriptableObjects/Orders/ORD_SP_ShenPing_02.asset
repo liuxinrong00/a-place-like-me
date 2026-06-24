@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_ShenPing_02
+  m_EditorClassIdentifier: 
+  id: special_shen_ping_02
+  displayName: "特殊订单：皮面笔记本要像新买的"
+  itemType: "深棕色皮面笔记本，四角磨损，封面有压痕，内页夹满便签。"
+  damageLevel: "皮面笔记本要像新买的"
+  difficulty: 0
+  customer: {fileID: 11400000, guid: 9d27aff7a9f2f5df9017df9326f40f46, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 2
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 2
+    materialCost: 17
+    energyCost: 18
+    rewardCoins: 40
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 11
+    energyCost: 17
+    rewardCoins: 33
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 1
+    materialCost: 29
+    energyCost: 18
+    rewardCoins: 35
+  energyCost: 18
+  rewardCoins: 40
+  isSpecialOrder: 1
+  specialStoryId: shen_ping
+  specialStorySequence: 2
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 0
+  customerNote: "边角补色无色差，压痕尽量消失，整体像新买的一样。"
+  feedbackText: "笔记本边角和压痕都处理得很干净。它看起来可靠，我也不用一直盯着它哪里坏了。"
+  momentText: "沈平：明天要带这本笔记本去面谈。它不像新的炫耀，更像一个可以让我稳住的工具。"
+  todayStoryText: "第二次来时，他的要求更多、更细，每一项都像验收标准。笔记本恢复整洁崭新的视觉状态。取货时，他盯着封面很久，终于说：“这样我就不会一直想着它哪里坏了。”"
+  diaryText: "皮面笔记本的四角磨得发灰，我一点点补色。便签夹在里面，露出不同颜色的小边。它合上后变得很整齐，但我总觉得，那些小纸条还在里面轻轻挤着。"

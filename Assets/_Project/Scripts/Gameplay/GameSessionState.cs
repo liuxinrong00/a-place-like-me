@@ -11,7 +11,10 @@ namespace APlaceLikeMe.Gameplay
         private readonly List<OrderDefinition> acceptedOrders = new();
         private readonly List<CompletedOrderRecord> completedOrders = new();
         private readonly List<string> feedbackLog = new();
+        private readonly List<string> momentLog = new();
+        private readonly List<string> diaryLog = new();
         private readonly Dictionary<MaterialDefinition, int> todayMaterialConsumption = new();
+        private int todayAcceptedSpecialOrderCount;
 
         public int CurrentDay { get; private set; } = 1;
         public int Coins { get; private set; }
@@ -22,11 +25,14 @@ namespace APlaceLikeMe.Gameplay
         public int TodayExpenses { get; private set; }
         public int TodayEnergySpent { get; private set; }
         public int TodayAuthenticityDelta { get; private set; }
+        public int TodayAcceptedSpecialOrderCount => todayAcceptedSpecialOrderCount;
         public GamePhase Phase { get; private set; } = GamePhase.Boot;
         public IReadOnlyList<OrderDefinition> TodaysOrders => todaysOrders;
         public IReadOnlyList<OrderDefinition> AcceptedOrders => acceptedOrders;
         public IReadOnlyList<CompletedOrderRecord> CompletedOrders => completedOrders;
         public IReadOnlyList<string> FeedbackLog => feedbackLog;
+        public IReadOnlyList<string> MomentLog => momentLog;
+        public IReadOnlyList<string> DiaryLog => diaryLog;
         public IReadOnlyDictionary<MaterialDefinition, int> MaterialStock => materialStock;
         public IReadOnlyDictionary<MaterialDefinition, int> TodayMaterialConsumption => todayMaterialConsumption;
 
@@ -41,6 +47,7 @@ namespace APlaceLikeMe.Gameplay
             TodayExpenses = 0;
             TodayEnergySpent = 0;
             TodayAuthenticityDelta = 0;
+            todayAcceptedSpecialOrderCount = 0;
             Phase = GamePhase.Boot;
 
             materialStock.Clear();
@@ -59,6 +66,8 @@ namespace APlaceLikeMe.Gameplay
             acceptedOrders.Clear();
             completedOrders.Clear();
             feedbackLog.Clear();
+            momentLog.Clear();
+            diaryLog.Clear();
         }
 
         public void SetPhase(GamePhase phase)
@@ -75,6 +84,7 @@ namespace APlaceLikeMe.Gameplay
             TodayExpenses = 0;
             TodayEnergySpent = 0;
             TodayAuthenticityDelta = 0;
+            todayAcceptedSpecialOrderCount = 0;
             todayMaterialConsumption.Clear();
         }
 
@@ -88,9 +98,35 @@ namespace APlaceLikeMe.Gameplay
             if (!acceptedOrders.Contains(order))
             {
                 acceptedOrders.Add(order);
+                if (order.IsSpecialOrder)
+                {
+                    todayAcceptedSpecialOrderCount++;
+                }
             }
 
             return true;
+        }
+
+        public bool HasCompletedSpecialStorySequence(string storyId, int sequence)
+        {
+            if (string.IsNullOrWhiteSpace(storyId) || sequence <= 0)
+            {
+                return false;
+            }
+
+            foreach (var completedOrder in completedOrders)
+            {
+                var order = completedOrder.Order;
+                if (order != null &&
+                    order.IsSpecialOrder &&
+                    order.SpecialStoryId == storyId &&
+                    order.SpecialStorySequence == sequence)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public bool HasMaterial(MaterialDefinition material, int amount)
@@ -173,7 +209,7 @@ namespace APlaceLikeMe.Gameplay
             TodayAuthenticityDelta += amount;
         }
 
-        public void CompleteOrder(OrderDefinition order, string feedbackText = null)
+        public void CompleteOrder(OrderDefinition order, string feedbackText = null, string momentText = null, string diaryText = null)
         {
             todaysOrders.Remove(order);
             acceptedOrders.Remove(order);
@@ -182,6 +218,17 @@ namespace APlaceLikeMe.Gameplay
             if (!string.IsNullOrWhiteSpace(finalFeedbackText))
             {
                 feedbackLog.Add(finalFeedbackText);
+            }
+
+            var finalMomentText = string.IsNullOrWhiteSpace(momentText) ? order.MomentText : momentText;
+            if (!string.IsNullOrWhiteSpace(finalMomentText))
+            {
+                momentLog.Add(finalMomentText);
+            }
+
+            if (!string.IsNullOrWhiteSpace(diaryText))
+            {
+                diaryLog.Add(diaryText);
             }
         }
 
@@ -193,8 +240,11 @@ namespace APlaceLikeMe.Gameplay
             TodayExpenses = 0;
             TodayEnergySpent = 0;
             TodayAuthenticityDelta = 0;
+            todayAcceptedSpecialOrderCount = 0;
             todayMaterialConsumption.Clear();
             feedbackLog.Clear();
+            momentLog.Clear();
+            diaryLog.Clear();
             SetTodaysOrders(orders);
             SetPhase(GamePhase.OrderSelection);
         }

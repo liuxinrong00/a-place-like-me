@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_ZhuNainai_02
+  m_EditorClassIdentifier: 
+  id: special_zhu_nainai_02
+  displayName: "特殊订单：想变新的小茶盘"
+  itemType: "木质小茶盘，边缘发黑，底部有水渍，托槽松动。"
+  damageLevel: "想变新的小茶盘"
+  difficulty: 0
+  customer: {fileID: 11400000, guid: c6ed571b450c53b24eddb692762e6dda, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 16
+    energyCost: 18
+    rewardCoins: 40
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    materialCost: 10
+    energyCost: 17
+    rewardCoins: 33
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 21
+    energyCost: 18
+    rewardCoins: 35
+  energyCost: 18
+  rewardCoins: 40
+  isSpecialOrder: 1
+  specialStoryId: zhu_nainai
+  specialStorySequence: 2
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 0
+  customerNote: "她说随便，但又问“能不能亮堂一点”。"
+  feedbackText: "小茶盘亮堂了不少，又不显得夸张。摆出来招待邻居，应该不会寒碜。"
+  momentText: "祝奶奶：茶盘修得亮堂了。明天要是天气好，就泡点茶，叫隔壁来坐坐。"
+  todayStoryText: "第二次来时，她仍说“你看着弄”，但手一直摸着茶盘边缘。茶盘恢复干净、平整、接近新物的状态。取货时，她有点不好意思地说：“其实我就是想让它体面一点，摆出来不寒碜。”"
+  diaryText: "茶盘边缘发黑的地方磨了很久，水渍淡下去后，木头露出一点暖色。我把托槽调稳，倒水试了两次。它亮堂了一些，但没有亮到陌生。"

@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_QiaoMaimai_05
+  m_EditorClassIdentifier: 
+  id: special_qiao_maimai_05
+  displayName: "特殊订单：裂掉的补光灯支架"
+  itemType: "直播补光灯支架，接口裂开，底座贴满换过的账号标签。"
+  damageLevel: "裂掉的补光灯支架"
+  difficulty: 2
+  customer: {fileID: 11400000, guid: f3a80f381fbe70d932a8463576f428f1, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+    amount: 3
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 3
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 47
+    energyCost: 25
+    rewardCoins: 45
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 35
+    energyCost: 23
+    rewardCoins: 42
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 3
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 47
+    energyCost: 23
+    rewardCoins: 48
+  energyCost: 23
+  rewardCoins: 48
+  isSpecialOrder: 1
+  specialStoryId: qiao_maimai
+  specialStorySequence: 5
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 2
+  customerNote: "改造成更稳、更适合拍慢节奏修复视频的支架。"
+  feedbackText: "支架稳了，也适合拍慢一点的修复视频。谢谢你们没有把它做成最热门的样子，而是做成适合它的样子。"
+  momentText: "乔麦麦：今天不爆改，只拍手和物件。播放量不是最高，但第一次有人在评论里讲起自己的旧东西。"
+  todayStoryText: "最后一次来时，她先把手机扣在桌上，问：“这次可以只拍手和物件吗？”补光灯支架被改成新的拍摄工具，外观不再追求最热风格，而是适合安静记录。视频标题叫“今天不爆改，只重新做成适合它的样子”。播放量不是最高，但评论区第一次有人讲起自己的旧物。"
+  diaryText: "补光灯支架的接口裂得很干脆，像被拧过太多次。我把底座加稳，没有再贴新的标签。灯打开后，它不再晃，光落在手和物件上，刚好够用。"

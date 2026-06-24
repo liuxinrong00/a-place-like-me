@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_LiangXiao_03
+  m_EditorClassIdentifier: 
+  id: special_liang_xiao_03
+  displayName: "特殊订单：裂开的安全帽"
+  itemType: "黄色安全帽，侧面有裂纹，帽带变形，帽壳有灰尘和刮痕。"
+  damageLevel: "裂开的安全帽"
+  difficulty: 1
+  customer: {fileID: 11400000, guid: 5208664e0a8a836e57453003465ad6e6, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 35
+    energyCost: 21
+    rewardCoins: 39
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 23
+    energyCost: 18
+    rewardCoins: 40
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 35
+    energyCost: 20
+    rewardCoins: 38
+  energyCost: 18
+  rewardCoins: 40
+  isSpecialOrder: 1
+  specialStoryId: liang_xiao
+  specialStorySequence: 3
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 1
+  customerNote: "裂纹留下，帽子修到还能戴。"
+  feedbackText: "安全帽能用了，那道裂纹也还看得见。修得不是漂亮，是让我记得别再硬撑。"
+  momentText: "梁骁：帽子拿回来了，裂纹没有被抹平。以后看见它，就当有人提醒我：累了要停一下。"
+  todayStoryText: "这次梁骁话更少，把安全帽放下，只说“这道别补平”。安全帽被修到可用状态，但裂纹仍作为明显痕迹存在。交付时，他没有立刻戴上，而是看了很久，说：“它提醒我别硬撑。”"
+  diaryText: "安全帽的裂纹留在那里，像一道被迫停下的刹车痕。我把帽带调紧，又把内衬固定好。修完试戴时，帽壳轻轻磕到桌边，我下意识放慢了手。"

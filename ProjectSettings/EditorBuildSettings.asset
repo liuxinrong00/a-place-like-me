@@ -42,6 +42,6 @@ EditorBuildSettings:
     path: Assets/_Project/Scenes/BedRoom.unity
     guid: bb9efb9c091846445870a83c9e4b7190
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
-    guid: 2cda990e2423bbf4892e6590ba056729
+    path: Assets/_Project/Scenes/Setting.unity
+    guid: 28600c637efc54940b639d2bfb2a1ab3
   m_configObjects: {}

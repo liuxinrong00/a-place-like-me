@@ -9,6 +9,7 @@ namespace APlaceLikeMe.UI
         OrderBoard,
         Phone,
         RepairTable,
-        CashierDesk
+        CashierDesk,
+        Pet
     }
 }

@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_ZhuNainai_01
+  m_EditorClassIdentifier: 
+  id: special_zhu_nainai_01
+  displayName: "特殊订单：收不到台的旧收音机"
+  itemType: "小木壳收音机，旋钮松，天线弯，背面有一块晒淡的圆形贴痕。"
+  damageLevel: "收不到台的旧收音机"
+  difficulty: 0
+  customer: {fileID: 11400000, guid: c6ed571b450c53b24eddb692762e6dda, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 16
+    energyCost: 17
+    rewardCoins: 33
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    materialCost: 10
+    energyCost: 14
+    rewardCoins: 34
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 21
+    energyCost: 16
+    rewardCoins: 32
+  energyCost: 14
+  rewardCoins: 34
+  isSpecialOrder: 1
+  specialStoryId: zhu_nainai
+  specialStorySequence: 1
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 1
+  customerNote: "能响就行，外壳不用弄太新。"
+  feedbackText: "收音机能响了，外壳还是旧旧的。听到老戏台的时候，我就知道它还认得回家的路。"
+  momentText: "祝奶奶：收音机又响了。声音有点沙，不碍事，老戏台还能找到就行。"
+  todayStoryText: "祝奶奶第一次来店，像只是顺路把东西放下。她说“能修就修，不能修就算了”，离开前又补一句：“要是还能收到那个老戏台就更好。”收音机恢复播放，木壳旧色和贴痕仍在。她听到戏曲声时拍了拍机壳，说：“哎，还挺会找路。”"
+  diaryText: "小木壳收音机修好后，先是一阵沙沙声。旋钮转到某个位置时，戏曲声忽然挤了出来。背面晒淡的圆形贴痕还在，像墙上取下相框后留下的影子。"

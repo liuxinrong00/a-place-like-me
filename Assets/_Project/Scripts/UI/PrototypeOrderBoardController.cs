@@ -275,8 +275,12 @@ namespace APlaceLikeMe.UI
         private string FormatOrderButton(OrderDefinition order)
         {
             var customerName = order.Customer == null ? "未知顾客" : order.Customer.DisplayName;
-            var rewardCoins = selectedRepairMethod == null ? order.RewardCoins : host.OrderService.GetFinalRewardCoins(order, selectedRepairMethod);
-            return $"{FormatDifficulty(order.Difficulty)} · {order.DisplayName}\n{customerName} · {rewardCoins} 金币 · {GetOrderStatusText(order)}";
+            if (order.IsSpecialOrder)
+            {
+                return $"{order.DisplayName}\n{GetOrderStatusText(order)}";
+            }
+
+            return $"{FormatDifficulty(order.Difficulty)} · {order.DisplayName}\n{customerName} · {GetOrderStatusText(order)}";
         }
 
         private string GetOrderStatusText(OrderDefinition order)
@@ -316,19 +320,16 @@ namespace APlaceLikeMe.UI
                     }
 
                     return label;
-                }));
+            }));
             var customerName = order.Customer == null ? "未知顾客" : order.Customer.DisplayName;
             var customerType = order.Customer == null ? "未知" : FormatCustomerType(order.Customer.CustomerType);
-            return $"订单：{order.DisplayName}\n难度：{FormatDifficulty(order.Difficulty)}\n物品：{order.ItemType}\n损坏：{order.DamageLevel}\n顾客：{customerName} / {customerType}\n需要：{materialText}\n基础能量：{order.EnergyCost}\n基础报酬：{order.RewardCoins}\n备注：{order.CustomerNote}";
+            return $"订单：{order.DisplayName}\n难度：{FormatDifficulty(order.Difficulty)}\n物品：{order.ItemType}\n损坏：{order.DamageLevel}\n顾客：{customerName} / {customerType}\n需要：{materialText}\n基础能量：{order.EnergyCost}\n备注：{order.CustomerNote}";
         }
 
         private string FormatRepairPreview(OrderDefinition order, RepairMethodDefinition repairMethod)
         {
             var energyCost = host.OrderService.GetFinalEnergyCost(order, repairMethod);
-            var materialCost = host.OrderService.GetFinalMaterialCost(order, repairMethod);
-            var rewardCoins = host.OrderService.GetFinalRewardCoins(order, repairMethod);
-            var authenticityDelta = host.OrderService.GetFinalAuthenticityDelta(order, repairMethod);
-            return $"修补方式：{repairMethod.DisplayName}\n{repairMethod.Description}\n\n预计消耗能量：{energyCost}\n材料成本：{materialCost}\n预计收入：{rewardCoins}\n净收益：{rewardCoins - materialCost}\n预计真实度：{FormatSigned(authenticityDelta)}";
+            return $"修补方式：{repairMethod.DisplayName}\n{repairMethod.Description}\n\n预计消耗能量：{energyCost}";
         }
 
         private string FormatRepairMethodButton(RepairMethodDefinition repairMethod)
@@ -339,9 +340,7 @@ namespace APlaceLikeMe.UI
             }
 
             var energyCost = host.OrderService.GetFinalEnergyCost(selectedOrder, repairMethod);
-            var rewardCoins = host.OrderService.GetFinalRewardCoins(selectedOrder, repairMethod);
-            var materialCost = host.OrderService.GetFinalMaterialCost(selectedOrder, repairMethod);
-            return $"{repairMethod.DisplayName}\n能量 {energyCost} / 收入 {rewardCoins} / 净 {rewardCoins - materialCost}";
+            return $"{repairMethod.DisplayName}\n能量 {energyCost}";
         }
 
         private IEnumerable<MaterialDefinition> GetAvailableMaterials()

@@ -30,7 +30,6 @@ namespace APlaceLikeMe.UI
 
         private const string StoreSceneName = "Store";
         private const string BedroomSceneName = "BedRoom";
-        private const string SampleSceneName = "SampleScene";
         private const string InteractionSceneName = "S_OrderBoardUI";
         private const string OrderSceneName = "Order";
         private const string FixSceneName = "Fix";
@@ -49,9 +48,15 @@ namespace APlaceLikeMe.UI
         private const string EnterStoreMarkerName = "EnterStoreDoor";
         private const string EnterStoreRoomMarkerName = "EnterStoreRoom";
         private const string UiCanvasName = "UICanvas";
+        private const string PromptImageName = "Prompt";
+        private const string LovedImageName = "Loved";
+        private const string WaitImageName = "Wait";
         private const string MoneyHudName = "Money";
         private const string EnergyHudName = "Energy";
         private const string TimeHudName = "Time";
+        private const string InteractionPromptSpritePath = "UI/pixel-e-tooltip-bubble-cutout-trimmed";
+        private const string PetLovedBubbleName = "PrototypePetLovedBubble";
+        private const string NpcWaitBubbleName = "PrototypeNpcWaitBubble";
         private const string NightOverlayName = "PrototypeNightOverlay";
         private const string ChooseYesButtonName = "Yes";
         private const string ChooseNoButtonName = "No";
@@ -62,15 +67,27 @@ namespace APlaceLikeMe.UI
         private const float BedWakeSpawnPadding = 1.25f;
         private const string RuntimeRootName = "PrototypeRuntime";
         private const string PlayerObjectName = "LXR";
+        private const string PetObjectName = "Pet";
         private const string LegacyPlayerObjectName = "Player";
         private const string InteractionMarkerRootName = "Interaction";
         private const string LegacyInteractionMarkerRootName = "Intraction";
         private const float CameraOrthographicSize = 5f;
         private const float InteractionRadius = 0.55f;
+        private const float CashierInteractionRadius = 0.22f;
+        private static readonly Vector2 CashierInteractionOffset = new(0f, 0.55f);
+        private static readonly Vector2 CashierInteractionSize = new(1.05f, 1.55f);
         private const float CheckoutIncomeDisplaySeconds = 1f;
         private const float CheckoutIncomeHorizontalGap = 34f;
         private const float CheckoutIncomeWidth = 80f;
+        private const float UiTemplatePixelsToWorld = 0.00925f;
+        private const float PetInteractionRadius = 0.9f;
+        private const float PetLovedDisplaySeconds = 2f;
+        private const float NpcWaitBubbleVerticalPadding = 0.12f;
         private static readonly Color HudTextColor = Color.black;
+        private static readonly Vector2 InteractionPromptWorldSize = new(0.82f, 0.74f);
+        private static readonly Vector3 InteractionPromptWorldOffset = new(0.28f, 1.08f, 0f);
+        private static readonly Vector3 PetLovedBubbleWorldOffset = new(0f, 0.95f, -0.1f);
+        private static readonly Vector2 DefaultReactionBubbleWorldSize = new(0.92f, 0.92f);
 #if UNITY_EDITOR
         private const string PrototypeConfigAssetPath = "Assets/_Project/ScriptableObjects/GameConfig/PrototypeGameConfig.asset";
 #endif
@@ -150,6 +167,8 @@ namespace APlaceLikeMe.UI
         private bool bedroomRestedLightOn;
         private bool isRoomSwitching;
         private bool hasStartupRoomOverride;
+        private bool waitForStartupSceneLoad;
+        private bool isInitialized;
         private RoomMode startupRoomOverride = RoomMode.Store;
         private Vector2 startupSpawnOverride = StoreSpawn;
         private Text interactionHintText;
@@ -161,6 +180,14 @@ namespace APlaceLikeMe.UI
         private Component moneyHudText;
         private Component energyHudText;
         private Component timeHudText;
+        private RectTransform interactionPromptRect;
+        private Sprite interactionPromptSprite;
+        private SpriteRenderer interactionPromptRenderer;
+        private WorldBubbleTemplate lovedBubbleTemplate;
+        private WorldBubbleTemplate waitBubbleTemplate;
+        private SpriteRenderer petLovedBubbleRenderer;
+        private Transform petLovedBubbleTarget;
+        private float petLovedBubbleVisibleUntilTime;
         private RectTransform phoneLauncher;
         private RectTransform phonePanel;
         private Text phoneTitleText;
@@ -171,6 +198,9 @@ namespace APlaceLikeMe.UI
         private int pendingTouchFingerId = -1;
         private int lastSceneButtonActionFrame = -1;
         private PrototypeSceneButtonBinding lastSceneButtonBinding;
+        private readonly Dictionary<NPCBehavior, SpriteRenderer> npcWaitBubbleRenderers = new();
+        private readonly HashSet<NPCBehavior> visibleWaitBubbleNpcs = new();
+        private readonly List<NPCBehavior> staleWaitBubbleNpcs = new();
 
         public static PrototypeGameController Active { get; private set; }
         public GameSessionState State => state;
@@ -194,6 +224,8 @@ namespace APlaceLikeMe.UI
             controller.hasStartupRoomOverride = true;
             controller.startupRoomOverride = RoomMode.Store;
             controller.startupSpawnOverride = StoreSpawn;
+            controller.waitForStartupSceneLoad = true;
+            controller.InitializeWhenStartupSceneIsReady();
         }
 
         private void Awake()
@@ -214,15 +246,49 @@ namespace APlaceLikeMe.UI
                 return;
             }
 
+            if (waitForStartupSceneLoad)
+            {
+                InitializeWhenStartupSceneIsReady();
+                return;
+            }
+
             Initialize(config);
         }
 
         private void OnDestroy()
         {
+            SceneManager.sceneLoaded -= HandleStartupSceneLoaded;
             if (Active == this)
             {
                 Active = null;
             }
+        }
+
+        private void HandleStartupSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (!waitForStartupSceneLoad || scene.name != GetSceneName(startupRoomOverride))
+            {
+                return;
+            }
+
+            SceneManager.sceneLoaded -= HandleStartupSceneLoaded;
+            waitForStartupSceneLoad = false;
+            Initialize(config);
+        }
+
+        private void InitializeWhenStartupSceneIsReady()
+        {
+            var startupScene = SceneManager.GetSceneByName(GetSceneName(startupRoomOverride));
+            if (startupScene.IsValid() && startupScene.isLoaded)
+            {
+                SceneManager.sceneLoaded -= HandleStartupSceneLoaded;
+                waitForStartupSceneLoad = false;
+                Initialize(config);
+                return;
+            }
+
+            SceneManager.sceneLoaded -= HandleStartupSceneLoaded;
+            SceneManager.sceneLoaded += HandleStartupSceneLoaded;
         }
 
         private void Update()
@@ -306,10 +372,20 @@ namespace APlaceLikeMe.UI
             {
                 UpdateCameraForPlayer(currentPlayer.position);
             }
+
+            UpdateInteractionPrompt();
+            UpdatePetLovedBubble();
+            UpdateNpcWaitBubbles();
         }
 
         public void Initialize(PrototypeGameConfig prototypeConfig)
         {
+            if (isInitialized)
+            {
+                return;
+            }
+
+            isInitialized = true;
             config = prototypeConfig;
             EnsureEventSystem();
             BuildUi();
@@ -333,7 +409,7 @@ namespace APlaceLikeMe.UI
 
         public OrderResult TryAcceptOrderFromPanel(OrderDefinition order)
         {
-            var result = orderService.TryAcceptOrder(state, order);
+            var result = orderService.TryAcceptOrder(state, order, config.SpecialOrdersPerRefreshDay);
             Render();
             return result;
         }
@@ -467,10 +543,30 @@ namespace APlaceLikeMe.UI
                 return true;
             }
 
+            if (phoneApp.TryHandleScrollInput(
+                Input.mousePosition,
+                Input.mouseScrollDelta.y,
+                Input.GetMouseButtonDown(0),
+                Input.GetMouseButton(0),
+                Input.GetMouseButtonUp(0)))
+            {
+                return true;
+            }
+
             for (var index = 0; index < Input.touchCount; index++)
             {
                 var touch = Input.GetTouch(index);
                 if (touch.phase == TouchPhase.Began && phoneApp.TryHandleOpenPointer(touch.position))
+                {
+                    return true;
+                }
+
+                if (phoneApp.TryHandleScrollInput(
+                    touch.position,
+                    0f,
+                    touch.phase == TouchPhase.Began,
+                    touch.phase == TouchPhase.Moved || touch.phase == TouchPhase.Stationary,
+                    touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled))
                 {
                     return true;
                 }
@@ -499,7 +595,7 @@ namespace APlaceLikeMe.UI
             canReturnToStoreAfterRest = false;
             bedroomRestedLightOn = false;
             state.SetPhase(GamePhase.OrderSelection);
-            var orders = orderService.GetOrdersForDay(config.OrderPool, state.CurrentDay, config.OrdersPerDay);
+            var orders = GetOrdersForDay(state.CurrentDay);
             state.SetTodaysOrders(orders);
             UnloadInteractionSceneIfLoaded();
             feedbackText.text = $"第 {state.CurrentDay} 天开店。到蓝色工作台接订单，门可以进入卧室。";
@@ -600,6 +696,9 @@ namespace APlaceLikeMe.UI
 
                     Render();
                     break;
+                case PrototypeSceneInteractionKind.Pet:
+                    ShowPetLovedBubble(interactable.transform);
+                    break;
             }
         }
 
@@ -624,7 +723,7 @@ namespace APlaceLikeMe.UI
 
         private void GoNextDay()
         {
-            if (state.CurrentDay >= config.PrototypeDays)
+            if (config.HasPrototypeDayLimit && state.CurrentDay >= config.PrototypeDays)
             {
                 state.SetPhase(GamePhase.DayEnd);
                 UnloadInteractionSceneIfLoaded();
@@ -633,7 +732,7 @@ namespace APlaceLikeMe.UI
                 return;
             }
 
-            var orders = orderService.GetOrdersForDay(config.OrderPool, state.CurrentDay + 1, config.OrdersPerDay);
+            var orders = GetOrdersForDay(state.CurrentDay + 1);
             var livingCost = GetLivingCostForNextDay(state.CurrentDay + 1);
             state.StartNextDay(orders);
             state.SpendCoins(livingCost);
@@ -643,6 +742,17 @@ namespace APlaceLikeMe.UI
             feedbackText.text = $"{FormatDayLabel(state.CurrentDay)}早上。扣除生活费 {livingCost} 元，能量已恢复。";
             SwitchRoom(RoomMode.Bedroom, BedroomWakeSpawn, new[] { BedMarkerName });
             Render();
+        }
+
+        private IReadOnlyList<OrderDefinition> GetOrdersForDay(int day)
+        {
+            return orderService.GetOrdersForDay(
+                config.OrderPool,
+                state,
+                day,
+                config.OrdersPerDay,
+                config.SpecialOrdersPerRefreshDay,
+                config.SpecialOrderRefreshIntervalDays);
         }
 
         private void SwitchRoom(RoomMode room, Vector2 spawnPosition)
@@ -752,6 +862,7 @@ namespace APlaceLikeMe.UI
             var runtimeRoot = CreateRuntimeRoot(scene);
             ConfigureRoomLighting(scene, runtimeRoot.transform, room);
             SetupPlayer(scene, room, spawnPosition);
+            ConfigureBedroomPet(scene, room);
 
             if (room == RoomMode.Store)
             {
@@ -771,9 +882,61 @@ namespace APlaceLikeMe.UI
             BindSceneHud(scene);
         }
 
+        private void ConfigureBedroomPet(Scene scene, RoomMode room)
+        {
+            if (room != RoomMode.Bedroom)
+            {
+                return;
+            }
+
+            var petObject = FindSceneObject(scene, PetObjectName);
+            if (petObject == null)
+            {
+                return;
+            }
+
+            ConfigurePetInteractable(petObject);
+
+            var petController = petObject.GetComponent<BedroomPetController>();
+            if (petController == null)
+            {
+                petController = petObject.AddComponent<BedroomPetController>();
+            }
+
+            if (canReturnToStoreAfterRest || bedroomRestedLightOn)
+            {
+                petController.BeginRandomPlayback(currentMovementBounds);
+                return;
+            }
+
+            petController.SetNightSleep();
+        }
+
+        private static void ConfigurePetInteractable(GameObject petObject)
+        {
+            if (petObject == null)
+            {
+                return;
+            }
+
+            if (petObject.GetComponent<Collider2D>() == null)
+            {
+                var collider = petObject.AddComponent<BoxCollider2D>();
+                collider.size = Vector2.one;
+            }
+
+            var interactable = petObject.GetComponent<PrototypeSceneInteractable>();
+            if (interactable == null)
+            {
+                interactable = petObject.AddComponent<PrototypeSceneInteractable>();
+            }
+
+            interactable.Configure(PrototypeSceneInteractionKind.Pet, "按 E：摸摸它");
+        }
+
         private static IEnumerator UnloadOtherGameplayScenes(string targetSceneName)
         {
-            foreach (var sceneName in new[] { StoreSceneName, BedroomSceneName, SampleSceneName })
+            foreach (var sceneName in new[] { StoreSceneName, BedroomSceneName })
             {
                 if (sceneName == targetSceneName)
                 {
@@ -1077,16 +1240,24 @@ namespace APlaceLikeMe.UI
                 CreateInteractable(runtimeRoot, $"CashierDeskTrigger_{index + 1}", PrototypeSceneInteractionKind.CashierDesk, cashierRegion.Center, ExpandInteractionSize(cashierRegion.Size), "按 E：结账");
             }
 
+            var needsFallbackCashierRegion = cashierRegions.Count == 0;
+            var needsFallbackRepairRegion = fixTableRegions.Count == 0;
+            var needsFallbackPhoneRegion = phoneRegions.Count == 0;
             for (var index = 0; index < interactionRegions.Count; index++)
             {
                 var interactionRegion = interactionRegions[index];
-                if (IsCashierDeskRegion(scene, interactionRegion))
+                if (!needsFallbackCashierRegion && !needsFallbackRepairRegion && !needsFallbackPhoneRegion)
+                {
+                    continue;
+                }
+
+                if (needsFallbackCashierRegion && IsCashierDeskRegion(scene, interactionRegion))
                 {
                     CreateInteractable(runtimeRoot, $"CashierDeskTrigger_{cashierRegions.Count + index + 1}", PrototypeSceneInteractionKind.CashierDesk, interactionRegion.Center, ExpandInteractionSize(interactionRegion.Size), "按 E：结账");
                     continue;
                 }
 
-                if (interactionRegion.Center.y < 3f && interactionRegion.Center.x > -2f)
+                if (needsFallbackRepairRegion && interactionRegion.Center.y < 3f && interactionRegion.Center.x > -2f)
                 {
                     CreateInteractable(runtimeRoot, $"RepairTableTrigger_{fixTableRegions.Count + index + 1}", PrototypeSceneInteractionKind.RepairTable, interactionRegion.Center, ExpandInteractionSize(interactionRegion.Size), "按 E：打开修补台");
                     continue;
@@ -1163,8 +1334,8 @@ namespace APlaceLikeMe.UI
 
             var cashierCenter = (Vector2)bounds.Value.center;
             var cashierSize = (Vector2)bounds.Value.size;
-            return Mathf.Abs(region.Center.x - cashierCenter.x) <= Mathf.Max(1f, cashierSize.x * 0.75f + 0.75f)
-                && Mathf.Abs(region.Center.y - cashierCenter.y) <= Mathf.Max(1f, cashierSize.y * 0.75f + 0.75f);
+            return Mathf.Abs(region.Center.x - cashierCenter.x) <= Mathf.Max(0.75f, cashierSize.x * 0.35f)
+                && Mathf.Abs(region.Center.y - cashierCenter.y) <= Mathf.Max(0.75f, cashierSize.y * 0.35f);
         }
 
         private static Bounds? GetObjectBounds(GameObject target)
@@ -1399,6 +1570,12 @@ namespace APlaceLikeMe.UI
 
         private static void CreateInteractable(Transform parent, string name, PrototypeSceneInteractionKind kind, Vector2 center, Vector2 size, string prompt)
         {
+            if (kind == PrototypeSceneInteractionKind.CashierDesk)
+            {
+                center += CashierInteractionOffset;
+                size = CashierInteractionSize;
+            }
+
             var interactableObject = new GameObject(name, typeof(BoxCollider2D), typeof(PrototypeSceneInteractable));
             interactableObject.transform.SetParent(parent, false);
             interactableObject.transform.position = new Vector3(center.x, center.y, -0.1f);
@@ -1414,6 +1591,19 @@ namespace APlaceLikeMe.UI
         private static void CreateBedroomPhoneInteractable(Transform runtimeRoot)
         {
             CreateInteractable(runtimeRoot, "BedroomPhoneTrigger", PrototypeSceneInteractionKind.Phone, new Vector2(7.6f, -5.7f), new Vector2(3.2f, 2.2f), "按 E：查看手机");
+        }
+
+        private readonly struct WorldBubbleTemplate
+        {
+            public WorldBubbleTemplate(Sprite sprite, Vector2 worldSize)
+            {
+                Sprite = sprite;
+                WorldSize = worldSize;
+            }
+
+            public Sprite Sprite { get; }
+            public Vector2 WorldSize { get; }
+            public bool HasSprite => Sprite != null;
         }
 
         private readonly struct TilemapInteractionRegion
@@ -1560,7 +1750,6 @@ namespace APlaceLikeMe.UI
             var playerPosition = (Vector2)currentPlayer.position;
             PrototypeSceneInteractable nearest = null;
             var nearestDistance = float.MaxValue;
-            var maxDistance = InteractionRadius * InteractionRadius;
             foreach (var interactable in FindObjectsByType<PrototypeSceneInteractable>(FindObjectsSortMode.None))
             {
                 if (interactable.gameObject.scene != currentPlayer.gameObject.scene)
@@ -1574,8 +1763,20 @@ namespace APlaceLikeMe.UI
                     continue;
                 }
 
+                if (!CanInteractWith(interactable))
+                {
+                    continue;
+                }
+
                 var closestPoint = collider.ClosestPoint(playerPosition);
                 var distance = Vector2.SqrMagnitude(closestPoint - playerPosition);
+                var interactionRadius = interactable.Kind switch
+                {
+                    PrototypeSceneInteractionKind.CashierDesk => CashierInteractionRadius,
+                    PrototypeSceneInteractionKind.Pet => PetInteractionRadius,
+                    _ => InteractionRadius
+                };
+                var maxDistance = interactionRadius * interactionRadius;
                 if (distance > maxDistance)
                 {
                     continue;
@@ -1589,6 +1790,13 @@ namespace APlaceLikeMe.UI
             }
 
             return nearest;
+        }
+
+        private static bool CanInteractWith(PrototypeSceneInteractable interactable)
+        {
+            return interactable == null ||
+                interactable.Kind != PrototypeSceneInteractionKind.CashierDesk ||
+                ShopManager.Instance != null && ShopManager.Instance.HasCheckoutReadyCustomer();
         }
 
         private void OpenInteractionScene(PrototypeInteractionPanelMode mode)
@@ -2090,6 +2298,14 @@ namespace APlaceLikeMe.UI
             moneyHudText = null;
             energyHudText = null;
             timeHudText = null;
+            interactionPromptRect = null;
+            interactionPromptRenderer = null;
+            lovedBubbleTemplate = default;
+            waitBubbleTemplate = default;
+            petLovedBubbleRenderer = null;
+            petLovedBubbleTarget = null;
+            petLovedBubbleVisibleUntilTime = 0f;
+            ClearNpcWaitBubbles();
 
             var canvasObject = FindSceneObject(scene, UiCanvasName);
             if (canvasObject == null)
@@ -2097,6 +2313,9 @@ namespace APlaceLikeMe.UI
                 return;
             }
 
+            BindInteractionPrompt(canvasObject);
+            lovedBubbleTemplate = BindWorldBubbleTemplate(canvasObject.transform, LovedImageName);
+            waitBubbleTemplate = BindWorldBubbleTemplate(canvasObject.transform, WaitImageName);
             moneyHudText = FindHudTextComponent(canvasObject, MoneyHudName);
             energyHudText = FindHudTextComponent(canvasObject, EnergyHudName);
             timeHudText = FindHudTextComponent(canvasObject, TimeHudName);
@@ -2104,6 +2323,290 @@ namespace APlaceLikeMe.UI
             ApplyHudTextColor(energyHudText);
             ApplyHudTextColor(timeHudText);
             UpdateSceneHud();
+            UpdateInteractionPrompt();
+        }
+
+        private void BindInteractionPrompt(GameObject canvasObject)
+        {
+            interactionPromptRect = FindPromptRect(canvasObject.transform);
+            var image = interactionPromptRect == null ? null : interactionPromptRect.GetComponent<Image>();
+            if (image != null)
+            {
+                image.raycastTarget = false;
+                image.preserveAspect = true;
+                interactionPromptSprite = image.sprite;
+            }
+
+            if (interactionPromptSprite == null)
+            {
+                interactionPromptSprite = Resources.Load<Sprite>(InteractionPromptSpritePath);
+            }
+
+            if (interactionPromptRect != null)
+            {
+                interactionPromptRect.gameObject.SetActive(false);
+            }
+
+            interactionPromptRenderer = EnsureWorldInteractionPrompt(canvasObject.scene);
+        }
+
+        private static WorldBubbleTemplate BindWorldBubbleTemplate(Transform canvasRoot, string imageName)
+        {
+            var templateTransform = FindInChildren(canvasRoot, imageName);
+            if (templateTransform == null)
+            {
+                return default;
+            }
+
+            var rectTransform = templateTransform.GetComponent<RectTransform>();
+            var image = templateTransform.GetComponent<Image>();
+            if (image != null)
+            {
+                image.raycastTarget = false;
+                image.preserveAspect = true;
+            }
+
+            templateTransform.gameObject.SetActive(false);
+            var sprite = image == null ? null : image.sprite;
+            if (sprite == null)
+            {
+                return default;
+            }
+
+            return new WorldBubbleTemplate(sprite, GetTemplateWorldSize(rectTransform));
+        }
+
+        private static Vector2 GetTemplateWorldSize(RectTransform rectTransform)
+        {
+            if (rectTransform == null || rectTransform.sizeDelta.x <= 0f || rectTransform.sizeDelta.y <= 0f)
+            {
+                return DefaultReactionBubbleWorldSize;
+            }
+
+            return new Vector2(
+                Mathf.Max(0.1f, rectTransform.sizeDelta.x * UiTemplatePixelsToWorld),
+                Mathf.Max(0.1f, rectTransform.sizeDelta.y * UiTemplatePixelsToWorld));
+        }
+
+        private static RectTransform FindPromptRect(Transform root)
+        {
+            var prompt = FindInChildren(root, PromptImageName);
+            return prompt == null ? null : prompt.GetComponent<RectTransform>();
+        }
+
+        private SpriteRenderer EnsureWorldInteractionPrompt(Scene scene)
+        {
+            var promptObject = FindSceneObject(scene, "PrototypeInteractionPrompt");
+            if (promptObject == null)
+            {
+                promptObject = new GameObject("PrototypeInteractionPrompt", typeof(SpriteRenderer));
+                SceneManager.MoveGameObjectToScene(promptObject, scene);
+            }
+
+            var spriteRenderer = promptObject.GetComponent<SpriteRenderer>();
+            if (spriteRenderer == null)
+            {
+                spriteRenderer = promptObject.AddComponent<SpriteRenderer>();
+            }
+
+            spriteRenderer.sprite = interactionPromptSprite;
+            spriteRenderer.sortingOrder = 1000;
+            spriteRenderer.enabled = false;
+            FitWorldPromptSize(promptObject.transform, spriteRenderer);
+            return spriteRenderer;
+        }
+
+        private static void FitWorldPromptSize(Transform promptTransform, SpriteRenderer spriteRenderer)
+        {
+            if (spriteRenderer == null || spriteRenderer.sprite == null)
+            {
+                promptTransform.localScale = Vector3.one;
+                return;
+            }
+
+            var spriteSize = spriteRenderer.sprite.bounds.size;
+            if (spriteSize.x <= 0f || spriteSize.y <= 0f)
+            {
+                promptTransform.localScale = Vector3.one;
+                return;
+            }
+
+            promptTransform.localScale = new Vector3(
+                InteractionPromptWorldSize.x / spriteSize.x,
+                InteractionPromptWorldSize.y / spriteSize.y,
+                1f);
+        }
+
+        private SpriteRenderer EnsureWorldBubbleRenderer(Scene scene, string objectName, WorldBubbleTemplate template)
+        {
+            if (!template.HasSprite)
+            {
+                return null;
+            }
+
+            var bubbleObject = FindSceneObject(scene, objectName);
+            if (bubbleObject == null)
+            {
+                bubbleObject = new GameObject(objectName, typeof(SpriteRenderer));
+                SceneManager.MoveGameObjectToScene(bubbleObject, scene);
+            }
+
+            var spriteRenderer = bubbleObject.GetComponent<SpriteRenderer>();
+            if (spriteRenderer == null)
+            {
+                spriteRenderer = bubbleObject.AddComponent<SpriteRenderer>();
+            }
+
+            ConfigureWorldBubbleRenderer(spriteRenderer, template);
+            return spriteRenderer;
+        }
+
+        private static SpriteRenderer CreateWorldBubbleRenderer(Scene scene, string objectName, WorldBubbleTemplate template)
+        {
+            if (!template.HasSprite)
+            {
+                return null;
+            }
+
+            var bubbleObject = new GameObject(objectName, typeof(SpriteRenderer));
+            SceneManager.MoveGameObjectToScene(bubbleObject, scene);
+
+            var spriteRenderer = bubbleObject.GetComponent<SpriteRenderer>();
+            ConfigureWorldBubbleRenderer(spriteRenderer, template);
+            return spriteRenderer;
+        }
+
+        private static void ConfigureWorldBubbleRenderer(SpriteRenderer spriteRenderer, WorldBubbleTemplate template)
+        {
+            if (spriteRenderer == null || !template.HasSprite)
+            {
+                return;
+            }
+
+            spriteRenderer.sprite = template.Sprite;
+            spriteRenderer.sortingOrder = 1001;
+            spriteRenderer.enabled = false;
+            FitWorldSpriteSize(spriteRenderer.transform, spriteRenderer, template.WorldSize);
+        }
+
+        private static void FitWorldSpriteSize(Transform targetTransform, SpriteRenderer spriteRenderer, Vector2 worldSize)
+        {
+            if (targetTransform == null || spriteRenderer == null || spriteRenderer.sprite == null)
+            {
+                return;
+            }
+
+            var spriteSize = spriteRenderer.sprite.bounds.size;
+            if (spriteSize.x <= 0f || spriteSize.y <= 0f)
+            {
+                targetTransform.localScale = Vector3.one;
+                return;
+            }
+
+            targetTransform.localScale = new Vector3(
+                worldSize.x / spriteSize.x,
+                worldSize.y / spriteSize.y,
+                1f);
+        }
+
+        private static void SetWorldBubbleVisible(SpriteRenderer spriteRenderer, Transform target, WorldBubbleTemplate template, float verticalPadding, bool visible)
+        {
+            if (spriteRenderer == null)
+            {
+                return;
+            }
+
+            visible = visible && target != null && template.HasSprite;
+            if (!visible)
+            {
+                spriteRenderer.enabled = false;
+                return;
+            }
+
+            spriteRenderer.transform.position = GetWorldBubblePosition(target, template.WorldSize, verticalPadding);
+            spriteRenderer.enabled = true;
+        }
+
+        private static void SetWorldBubbleVisibleAtOffset(SpriteRenderer spriteRenderer, Transform target, WorldBubbleTemplate template, Vector3 worldOffset, bool visible)
+        {
+            if (spriteRenderer == null)
+            {
+                return;
+            }
+
+            visible = visible && target != null && template.HasSprite;
+            if (!visible)
+            {
+                spriteRenderer.enabled = false;
+                return;
+            }
+
+            spriteRenderer.transform.position = target.position + worldOffset;
+            spriteRenderer.enabled = true;
+        }
+
+        private static Vector3 GetWorldBubblePosition(Transform target, Vector2 worldSize, float verticalPadding)
+        {
+            if (TryGetTargetBounds(target, out var bounds))
+            {
+                return new Vector3(
+                    bounds.center.x,
+                    bounds.max.y + verticalPadding + worldSize.y * 0.5f,
+                    target.position.z - 0.1f);
+            }
+
+            return target.position + new Vector3(0f, verticalPadding + worldSize.y, -0.1f);
+        }
+
+        private static bool TryGetTargetBounds(Transform target, out Bounds bounds)
+        {
+            bounds = default;
+            if (target == null)
+            {
+                return false;
+            }
+
+            var hasBounds = false;
+            foreach (var renderer in target.GetComponentsInChildren<Renderer>())
+            {
+                if (renderer == null || !renderer.enabled)
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                    continue;
+                }
+
+                bounds.Encapsulate(renderer.bounds);
+            }
+
+            if (hasBounds)
+            {
+                return true;
+            }
+
+            foreach (var collider in target.GetComponentsInChildren<Collider2D>())
+            {
+                if (collider == null || !collider.enabled)
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = collider.bounds;
+                    hasBounds = true;
+                    continue;
+                }
+
+                bounds.Encapsulate(collider.bounds);
+            }
+
+            return hasBounds;
         }
 
         private static Component FindHudTextComponent(GameObject canvasObject, string hudObjectName)
@@ -2385,15 +2888,135 @@ namespace APlaceLikeMe.UI
             phoneApp.SetLauncherVisible(currentRoom == RoomMode.Bedroom && !IsPhoneOpen());
         }
 
+        private void ShowPetLovedBubble(Transform petTransform)
+        {
+            if (petTransform == null || !lovedBubbleTemplate.HasSprite)
+            {
+                return;
+            }
+
+            petLovedBubbleTarget = petTransform;
+            petLovedBubbleVisibleUntilTime = Time.time + PetLovedDisplaySeconds;
+            petLovedBubbleRenderer ??= EnsureWorldBubbleRenderer(petTransform.gameObject.scene, PetLovedBubbleName, lovedBubbleTemplate);
+            SetWorldBubbleVisibleAtOffset(petLovedBubbleRenderer, petLovedBubbleTarget, lovedBubbleTemplate, PetLovedBubbleWorldOffset, true);
+        }
+
+        private void UpdatePetLovedBubble()
+        {
+            if (petLovedBubbleRenderer == null)
+            {
+                return;
+            }
+
+            var visible = currentRoom == RoomMode.Bedroom &&
+                Time.time < petLovedBubbleVisibleUntilTime &&
+                !isRoomSwitching &&
+                petLovedBubbleTarget != null;
+            SetWorldBubbleVisibleAtOffset(petLovedBubbleRenderer, petLovedBubbleTarget, lovedBubbleTemplate, PetLovedBubbleWorldOffset, visible);
+        }
+
+        private void UpdateNpcWaitBubbles()
+        {
+            if (currentRoom != RoomMode.Store || !waitBubbleTemplate.HasSprite || isRoomSwitching)
+            {
+                HideNpcWaitBubbles();
+                return;
+            }
+
+            visibleWaitBubbleNpcs.Clear();
+            foreach (var npc in FindObjectsByType<NPCBehavior>(FindObjectsSortMode.None))
+            {
+                if (npc == null || !ShouldShowWaitBubble(npc))
+                {
+                    continue;
+                }
+
+                var renderer = EnsureNpcWaitBubbleRenderer(npc);
+                SetWorldBubbleVisible(renderer, npc.transform, waitBubbleTemplate, NpcWaitBubbleVerticalPadding, true);
+                visibleWaitBubbleNpcs.Add(npc);
+            }
+
+            staleWaitBubbleNpcs.Clear();
+            foreach (var pair in npcWaitBubbleRenderers)
+            {
+                if (pair.Key == null || !visibleWaitBubbleNpcs.Contains(pair.Key))
+                {
+                    staleWaitBubbleNpcs.Add(pair.Key);
+                }
+            }
+
+            foreach (var npc in staleWaitBubbleNpcs)
+            {
+                if (npcWaitBubbleRenderers.TryGetValue(npc, out var renderer) && renderer != null)
+                {
+                    Destroy(renderer.gameObject);
+                }
+
+                npcWaitBubbleRenderers.Remove(npc);
+            }
+        }
+
+        private static bool ShouldShowWaitBubble(NPCBehavior npc)
+        {
+            return npc != null &&
+                npc.gameObject.activeInHierarchy &&
+                (npc.State == NPCBehaviorState.Queuing || npc.State == NPCBehaviorState.WaitingForCheckout);
+        }
+
+        private SpriteRenderer EnsureNpcWaitBubbleRenderer(NPCBehavior npc)
+        {
+            if (npcWaitBubbleRenderers.TryGetValue(npc, out var renderer) && renderer != null)
+            {
+                ConfigureWorldBubbleRenderer(renderer, waitBubbleTemplate);
+                return renderer;
+            }
+
+            renderer = CreateWorldBubbleRenderer(npc.gameObject.scene, $"{NpcWaitBubbleName}_{npc.GetInstanceID()}", waitBubbleTemplate);
+            if (renderer != null)
+            {
+                npcWaitBubbleRenderers[npc] = renderer;
+            }
+
+            return renderer;
+        }
+
+        private void HideNpcWaitBubbles()
+        {
+            foreach (var pair in npcWaitBubbleRenderers)
+            {
+                if (pair.Value != null)
+                {
+                    pair.Value.enabled = false;
+                }
+            }
+        }
+
+        private void ClearNpcWaitBubbles()
+        {
+            foreach (var pair in npcWaitBubbleRenderers)
+            {
+                if (pair.Value != null)
+                {
+                    Destroy(pair.Value.gameObject);
+                }
+            }
+
+            npcWaitBubbleRenderers.Clear();
+            visibleWaitBubbleNpcs.Clear();
+            staleWaitBubbleNpcs.Clear();
+        }
+
         private void UpdateInteractionHint()
         {
             if (interactionHintText == null)
             {
+                UpdateInteractionPrompt();
                 return;
             }
 
             if (isRoomSwitching)
             {
+                UpdateInteractionPrompt();
                 interactionHintText.text = "正在切换场景...";
                 return;
             }
@@ -2402,12 +3025,37 @@ namespace APlaceLikeMe.UI
             if (interactable != null)
             {
                 interactionHintText.text = GetInteractionPrompt(interactable);
+                UpdateInteractionPrompt(interactable);
                 return;
             }
 
             interactionHintText.text = currentRoom == RoomMode.Store
                 ? "WASD / 方向键移动，靠近双门或蓝色工作台按 E"
                 : "WASD / 方向键移动，靠近床、材料桌、手机或门按 E";
+            UpdateInteractionPrompt();
+        }
+
+        private void UpdateInteractionPrompt(PrototypeSceneInteractable interactable = null)
+        {
+            if (interactionPromptRenderer == null)
+            {
+                return;
+            }
+
+            interactable ??= GetCurrentInteractable();
+            var visible = interactable != null &&
+                currentPlayer != null &&
+                interactionPromptRenderer.sprite != null &&
+                !isRoomSwitching &&
+                !AreWorldControlsLocked;
+            if (!visible)
+            {
+                interactionPromptRenderer.enabled = false;
+                return;
+            }
+
+            interactionPromptRenderer.transform.position = currentPlayer.position + InteractionPromptWorldOffset;
+            interactionPromptRenderer.enabled = true;
         }
 
         private string GetInteractionPrompt(PrototypeSceneInteractable interactable)
@@ -2501,12 +3149,6 @@ namespace APlaceLikeMe.UI
                 return true;
             }
 
-            if (sceneName == SampleSceneName)
-            {
-                room = RoomMode.Store;
-                return true;
-            }
-
             room = RoomMode.Store;
             return false;
         }
@@ -2578,20 +3220,44 @@ namespace APlaceLikeMe.UI
             var contentPanel = CreatePanel(phonePanel, "PhoneContent", new Vector2(0.10f, 0.07f), new Vector2(0.90f, 0.38f));
             var contentImage = contentPanel.gameObject.AddComponent<Image>();
             contentImage.color = new Color32(254, 249, 240, 248);
-            contentImage.raycastTarget = false;
+            contentImage.raycastTarget = true;
             AddOutline(contentPanel.gameObject, 1);
-            phoneBodyText = CreateText(contentPanel, "PhoneBody", 22, FontStyle.Normal, PrototypeUiTheme.Ink);
+            var contentScrollRect = contentPanel.gameObject.AddComponent<ScrollRect>();
+            contentScrollRect.horizontal = false;
+            contentScrollRect.vertical = true;
+            contentScrollRect.movementType = ScrollRect.MovementType.Clamped;
+            contentScrollRect.scrollSensitivity = 35f;
+            var contentScrollbar = CreateVerticalScrollbar(contentPanel, "PhoneBodyScrollbar");
+
+            var contentViewport = CreatePanel(contentPanel, "Viewport", Vector2.zero, Vector2.one);
+            contentViewport.gameObject.AddComponent<RectMask2D>();
+            var viewportRect = contentViewport.GetComponent<RectTransform>();
+            PlaceFull(viewportRect, new RectOffset(34, 64, 28, 28));
+
+            phoneBodyText = CreateText(contentViewport, "PhoneBody", 21, FontStyle.Normal, PrototypeUiTheme.Ink);
             phoneBodyText.alignment = TextAnchor.UpperLeft;
             phoneBodyText.lineSpacing = 1.08f;
             phoneBodyText.raycastTarget = false;
-            phoneBodyText.verticalOverflow = VerticalWrapMode.Truncate;
-            PlaceFull(phoneBodyText.GetComponent<RectTransform>(), new RectOffset(34, 34, 28, 28));
+            phoneBodyText.verticalOverflow = VerticalWrapMode.Overflow;
+            var bodyRect = phoneBodyText.GetComponent<RectTransform>();
+            bodyRect.anchorMin = new Vector2(0f, 1f);
+            bodyRect.anchorMax = new Vector2(1f, 1f);
+            bodyRect.pivot = new Vector2(0.5f, 1f);
+            bodyRect.offsetMin = Vector2.zero;
+            bodyRect.offsetMax = Vector2.zero;
+            var bodySizeFitter = phoneBodyText.gameObject.AddComponent<ContentSizeFitter>();
+            bodySizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            bodySizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            contentScrollRect.viewport = viewportRect;
+            contentScrollRect.content = bodyRect;
+            contentScrollRect.verticalScrollbar = contentScrollbar;
+            contentScrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
 
             phoneApp = new PrototypePhoneAppController(
                 phonePanel,
                 phoneLauncher,
                 closeRect,
-                null,
+                contentScrollRect,
                 phoneTitleText,
                 phoneBodyText,
                 GetPhoneTabTitle,
@@ -2781,7 +3447,7 @@ namespace APlaceLikeMe.UI
 
             var lines = new List<string>
             {
-                $"第 {state.CurrentDay} 天收到 {todayFeedback.Count} 条反馈：",
+                $"第 {state.CurrentDay} 天收到 {todayFeedback.Count} 条评价：",
                 string.Empty
             };
             for (var index = 0; index < todayFeedback.Count; index++)
@@ -2794,6 +3460,29 @@ namespace APlaceLikeMe.UI
 
         private string BuildPhoneDiaryText()
         {
+            var todayDiary = state.DiaryLog;
+            if (todayDiary.Count > 0)
+            {
+                var lines = new List<string>
+                {
+                    $"{FormatDayLabel(state.CurrentDay)} 夜",
+                    string.Empty
+                };
+                for (var index = 0; index < todayDiary.Count; index++)
+                {
+                    if (todayDiary.Count > 1)
+                    {
+                        lines.Add($"第 {index + 1} 条");
+                    }
+
+                    lines.Add(todayDiary[index].Trim());
+                    lines.Add(string.Empty);
+                }
+
+                lines.Add($"当前真实度：{state.Authenticity}");
+                return string.Join("\n", lines);
+            }
+
             var completedCount = state.CompletedOrders.Count(order => order.DayCompleted == state.CurrentDay);
             var energyText = state.Energy <= 20
                 ? "身体已经有点发沉，明天要记得少勉强一点。"
@@ -2813,11 +3502,8 @@ namespace APlaceLikeMe.UI
 
         private string BuildPhoneMomentsText()
         {
-            var completedToday = state.CompletedOrders
-                .Where(record => record.DayCompleted == state.CurrentDay && record.Order != null)
-                .Select(record => record.Order)
-                .ToList();
-            if (completedToday.Count == 0)
+            var todayMoments = state.MomentLog;
+            if (todayMoments.Count == 0)
             {
                 return "小城动态\n\n今天没有新的顾客后续。\n\n也许有人还在犹豫，要不要把那件旧东西拿来修。";
             }
@@ -2827,11 +3513,9 @@ namespace APlaceLikeMe.UI
                 "小城动态",
                 string.Empty
             };
-            foreach (var order in completedToday)
+            foreach (var moment in todayMoments)
             {
-                var customerName = order.Customer == null ? "一位顾客" : order.Customer.DisplayName;
-                var itemName = string.IsNullOrWhiteSpace(order.DisplayName) ? "旧物" : order.DisplayName;
-                lines.Add($"{customerName}：把「{itemName}」带回家了。原来修补不是把过去藏起来。");
+                lines.Add(moment);
                 lines.Add(string.Empty);
             }
 
@@ -2936,6 +3620,46 @@ namespace APlaceLikeMe.UI
             rectTransform.anchorMax = Vector2.one;
             rectTransform.offsetMin = new Vector2(padding.left, padding.bottom);
             rectTransform.offsetMax = new Vector2(-padding.right, -padding.top);
+        }
+
+        private static Scrollbar CreateVerticalScrollbar(Transform parent, string name)
+        {
+            var scrollbarObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Scrollbar));
+            scrollbarObject.transform.SetParent(parent, false);
+            var scrollbarRect = scrollbarObject.GetComponent<RectTransform>();
+            scrollbarRect.anchorMin = new Vector2(1f, 0f);
+            scrollbarRect.anchorMax = new Vector2(1f, 1f);
+            scrollbarRect.offsetMin = new Vector2(-48f, 28f);
+            scrollbarRect.offsetMax = new Vector2(-26f, -28f);
+
+            var trackImage = scrollbarObject.GetComponent<Image>();
+            trackImage.color = new Color32(215, 203, 184, 190);
+
+            var slidingArea = CreatePanel(scrollbarObject.transform, "Sliding Area", Vector2.zero, Vector2.one);
+            PlaceFull(slidingArea, new RectOffset(3, 3, 3, 3));
+
+            var handleObject = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+            handleObject.transform.SetParent(slidingArea, false);
+            var handleRect = handleObject.GetComponent<RectTransform>();
+            handleRect.anchorMin = Vector2.zero;
+            handleRect.anchorMax = Vector2.one;
+            handleRect.offsetMin = Vector2.zero;
+            handleRect.offsetMax = Vector2.zero;
+
+            var handleImage = handleObject.GetComponent<Image>();
+            handleImage.color = new Color32(122, 102, 76, 220);
+
+            var scrollbar = scrollbarObject.GetComponent<Scrollbar>();
+            scrollbar.direction = Scrollbar.Direction.BottomToTop;
+            scrollbar.targetGraphic = handleImage;
+            scrollbar.handleRect = handleRect;
+            var colors = scrollbar.colors;
+            colors.normalColor = new Color32(122, 102, 76, 220);
+            colors.highlightedColor = new Color32(102, 82, 58, 235);
+            colors.pressedColor = new Color32(86, 66, 48, 255);
+            colors.disabledColor = new Color32(160, 150, 132, 120);
+            scrollbar.colors = colors;
+            return scrollbar;
         }
 
         private static Button CreateButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick, bool primary = false)

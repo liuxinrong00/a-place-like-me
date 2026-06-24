@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_ZhuNainai_05
+  m_EditorClassIdentifier: 
+  id: special_zhu_nainai_05
+  displayName: "特殊订单：要做成花布椅子的旧木椅"
+  itemType: "旧木椅，椅面裂开，靠背松动，坐垫布褪色。"
+  damageLevel: "要做成花布椅子的旧木椅"
+  difficulty: 2
+  customer: {fileID: 11400000, guid: c6ed571b450c53b24eddb692762e6dda, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+    amount: 3
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 1
+    materialCost: 33
+    energyCost: 25
+    rewardCoins: 45
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 21
+    energyCost: 23
+    rewardCoins: 42
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 3
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 26
+    energyCost: 23
+    rewardCoins: 48
+  energyCost: 23
+  rewardCoins: 48
+  isSpecialOrder: 1
+  specialStoryId: zhu_nainai
+  specialStorySequence: 5
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 2
+  customerNote: "她这次明确说：想把它改成一把能放在门口晒太阳的花布椅子。"
+  feedbackText: "旧木椅变成花布椅子了，不是新椅子，也不是老样子，正合适。以后能放在门口晒太阳。"
+  momentText: "祝奶奶：花布椅子做好了。坐在门口晒了一会儿太阳，觉得这样也挺好。"
+  todayStoryText: "最后一次来时，祝奶奶没有说“随便”。她拿出一块旧花布，说：“坐垫用这个，花色不好看也没事，我喜欢。”旧木椅被改成更适合现在生活的花布椅子。她在小店门口坐了一会儿，笑着说：“不是新椅子，也不是老样子，正合适。”"
+  diaryText: "旧木椅换上花布坐垫后，仍能看见靠背上的旧磨痕。它不像新椅子，也不像从前那把沉默的椅子。傍晚我把它搬到门口试坐，阳光落在布花上，颜色有点旧，却很稳。"

@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_ShenPing_04
+  m_EditorClassIdentifier: 
+  id: special_shen_ping_04
+  displayName: "特殊订单：团队合照的黑色相框"
+  itemType: "黑色细边相框，玻璃碎裂，边框掉漆，照片边缘卷起。"
+  damageLevel: "团队合照的黑色相框"
+  difficulty: 1
+  customer: {fileID: 11400000, guid: 9d27aff7a9f2f5df9017df9326f40f46, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+    amount: 2
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 1
+    materialCost: 33
+    energyCost: 22
+    rewardCoins: 46
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 21
+    energyCost: 21
+    rewardCoins: 39
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 3
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 26
+    energyCost: 22
+    rewardCoins: 41
+  energyCost: 22
+  rewardCoins: 46
+  isSpecialOrder: 1
+  specialStoryId: shen_ping
+  specialStorySequence: 4
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 0
+  customerNote: "相框恢复到干净、平整、适合摆在办公桌上的状态。"
+  feedbackText: "相框干净、平整，适合重新放回桌上。谢谢你们把它修体面了，也没有让我觉得过去很丢脸。"
+  momentText: "沈平：合照重新立起来了。我以前以为完美是不能让人看见问题，现在觉得，至少可以先把它摆回桌上。"
+  todayStoryText: "第四次来时，沈平不像以往那样急着列标准。他仍然要求完美复原，但语气轻了很多。相框恢复到完整体面的办公桌状态。取货时，他说：“我以前以为完美就是不能让别人看见任何问题。现在我觉得，至少我可以先把它摆回桌上。”"
+  diaryText: "相框玻璃换好了，照片边缘也压平了。我把边框擦到没有灰，却没有急着盖住照片。合照里的人都停在同一秒钟，谁也没有再往前走。"

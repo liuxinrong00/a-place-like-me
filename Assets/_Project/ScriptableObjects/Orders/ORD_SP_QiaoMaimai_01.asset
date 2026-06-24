@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_QiaoMaimai_01
+  m_EditorClassIdentifier: 
+  id: special_qiao_maimai_01
+  displayName: "特殊订单：旧音乐盒改成奶油风"
+  itemType: "木质音乐盒，外壳掉漆，旋钮松动，盒盖内刻着浅浅的名字缩写。"
+  damageLevel: "旧音乐盒改成奶油风"
+  difficulty: 0
+  customer: {fileID: 11400000, guid: f3a80f381fbe70d932a8463576f428f1, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+    amount: 2
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 16
+    energyCost: 17
+    rewardCoins: 33
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    materialCost: 10
+    energyCost: 15
+    rewardCoins: 30
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 21
+    energyCost: 15
+    rewardCoins: 36
+  energyCost: 15
+  rewardCoins: 36
+  isSpecialOrder: 1
+  specialStoryId: qiao_maimai
+  specialStorySequence: 1
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 2
+  customerNote: "改成当下流行的奶油色，加珍珠、蕾丝和可爱的装饰。"
+  feedbackText: "音乐盒拍出来很好看，但你们没有把里面的小缩写盖掉。原来旧物不只是素材，还有别人留下的线索。"
+  momentText: "乔麦麦：今天爆改音乐盒，本来想看风格反差，结果评论都在问盒盖里的缩写是谁。突然有点想知道。"
+  todayStoryText: "乔麦麦第一次出现时，补光灯打破了小店的安静。她一边夸这里复古，一边建议店主换更流行的背景墙。音乐盒被改成明显的新风格。她很满意镜头效果，却在剪视频时发现弹幕都在问：盒盖里的缩写是谁？"
+  diaryText: "音乐盒被改成很亮的颜色，珍珠和蕾丝贴上去后，旧木纹几乎看不见了。旋钮转动时，里面还是那段旧旋律。新外壳很上镜，声音却像从更里面的地方传出来。"

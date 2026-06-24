@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_TangGuo_05
+  m_EditorClassIdentifier: 
+  id: special_tang_guo_05
+  displayName: "特殊订单：兔子的新冒险装备"
+  itemType: "第一段的飞行兔队长，翅膀旧了，披风边缘起毛。"
+  damageLevel: "兔子的新冒险装备"
+  difficulty: 2
+  customer: {fileID: 11400000, guid: 450a398394204bca6fcf4289fc6f5daa, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+    amount: 3
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 1
+    materialCost: 33
+    energyCost: 25
+    rewardCoins: 45
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 21
+    energyCost: 23
+    rewardCoins: 42
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 3
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 26
+    energyCost: 23
+    rewardCoins: 48
+  energyCost: 23
+  rewardCoins: 48
+  isSpecialOrder: 1
+  specialStoryId: tang_guo
+  specialStorySequence: 5
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 2
+  customerNote: "继续改造，让兔子可以带着以前的样子去新的地方。"
+  feedbackText: "兔子的新装备做好了，它现在是以前的它，也是后来的它。升级不是把原来的样子忘掉。"
+  momentText: "唐果：飞行兔队长升级！它带着以前的补丁和新的披风去冒险。以前的它也在队伍里。"
+  todayStoryText: "最后一次来时，唐果没有说“坏掉就是变身”，而是说“它已经变过一次了，这次是升级”。兔子获得新的冒险装备，旧角色设定也被延续下来。唐果抱着它说：“它现在是以前的它，也是后来的它。”"
+  diaryText: "飞行兔又回来了，翅膀旧了一点，披风边缘起毛。我没有拆掉第一次改造的部分，只给它加了新的扣带。它身上有好几层故事，抱起来反而更稳。"

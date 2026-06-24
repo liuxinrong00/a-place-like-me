@@ -21,6 +21,7 @@ namespace APlaceLikeMe.UI
         private readonly System.Func<Tab, string> getTitle;
         private readonly System.Func<Tab, string> getBody;
         private readonly System.Action close;
+        private const float ScrollWheelStep = 0.12f;
 
         private RectTransform panel;
         private RectTransform launcher;
@@ -29,6 +30,7 @@ namespace APlaceLikeMe.UI
         private Text titleText;
         private Text bodyText;
         private Tab selectedTab = Tab.Reviews;
+        private bool isDraggingScroll;
 
         private readonly struct TabSprites
         {
@@ -149,6 +151,53 @@ namespace APlaceLikeMe.UI
             return false;
         }
 
+        public bool TryHandleScrollInput(
+            Vector2 screenPosition,
+            float scrollDelta,
+            bool pointerDown,
+            bool pointerHeld,
+            bool pointerUp)
+        {
+            if (!IsOpen() || !CanScroll())
+            {
+                isDraggingScroll = false;
+                return false;
+            }
+
+            if (isDraggingScroll)
+            {
+                if (pointerUp)
+                {
+                    isDraggingScroll = false;
+                    return true;
+                }
+
+                if (pointerHeld || pointerDown)
+                {
+                    SetScrollFromScreenPosition(screenPosition);
+                    return true;
+                }
+
+                isDraggingScroll = false;
+                return true;
+            }
+
+            if (Mathf.Abs(scrollDelta) > 0.01f && IsPointerInScrollArea(screenPosition))
+            {
+                SetScrollValue(scrollRect.verticalNormalizedPosition + scrollDelta * ScrollWheelStep);
+                return true;
+            }
+
+            if (pointerDown && IsPointerInScrollbar(screenPosition))
+            {
+                isDraggingScroll = true;
+                SetScrollFromScreenPosition(screenPosition);
+                return true;
+            }
+
+            return false;
+        }
+
         public void Open()
         {
             Open(Tab.Reviews);
@@ -215,6 +264,70 @@ namespace APlaceLikeMe.UI
             {
                 Canvas.ForceUpdateCanvases();
                 scrollRect.verticalNormalizedPosition = 1f;
+            }
+        }
+
+        private bool CanScroll()
+        {
+            if (scrollRect == null || scrollRect.viewport == null || scrollRect.content == null)
+            {
+                return false;
+            }
+
+            Canvas.ForceUpdateCanvases();
+            return scrollRect.content.rect.height > scrollRect.viewport.rect.height + 1f;
+        }
+
+        private bool IsPointerInScrollArea(Vector2 screenPosition)
+        {
+            var scrollRectTransform = scrollRect == null ? null : scrollRect.GetComponent<RectTransform>();
+            return scrollRectTransform != null &&
+                RectTransformUtility.RectangleContainsScreenPoint(scrollRectTransform, screenPosition, null);
+        }
+
+        private bool IsPointerInScrollbar(Vector2 screenPosition)
+        {
+            var scrollbar = scrollRect == null ? null : scrollRect.verticalScrollbar;
+            var scrollbarRect = scrollbar == null ? null : scrollbar.GetComponent<RectTransform>();
+            return scrollbarRect != null &&
+                RectTransformUtility.RectangleContainsScreenPoint(scrollbarRect, screenPosition, null);
+        }
+
+        private void SetScrollFromScreenPosition(Vector2 screenPosition)
+        {
+            var scrollbar = scrollRect == null ? null : scrollRect.verticalScrollbar;
+            var scrollbarRect = scrollbar == null ? null : scrollbar.GetComponent<RectTransform>();
+            if (scrollbarRect == null)
+            {
+                return;
+            }
+
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(scrollbarRect, screenPosition, null, out var localPoint))
+            {
+                return;
+            }
+
+            var height = scrollbarRect.rect.height;
+            if (height <= 0.01f)
+            {
+                return;
+            }
+
+            SetScrollValue(Mathf.InverseLerp(scrollbarRect.rect.yMin, scrollbarRect.rect.yMax, localPoint.y));
+        }
+
+        private void SetScrollValue(float value)
+        {
+            if (scrollRect == null)
+            {
+                return;
+            }
+
+            var normalizedValue = Mathf.Clamp01(value);
+            scrollRect.verticalNormalizedPosition = normalizedValue;
+            if (scrollRect.verticalScrollbar != null)
+            {
+                scrollRect.verticalScrollbar.value = normalizedValue;
             }
         }
     }

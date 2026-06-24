@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_QiaoMaimai_02
+  m_EditorClassIdentifier: 
+  id: special_qiao_maimai_02
+  displayName: "特殊订单：粉丝寄来的牛仔包"
+  itemType: "旧牛仔斜挎包，包带磨毛，内袋有手写祝福卡，拉链挂着褪色小星星。"
+  damageLevel: "粉丝寄来的牛仔包"
+  difficulty: 0
+  customer: {fileID: 11400000, guid: f3a80f381fbe70d932a8463576f428f1, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+    amount: 2
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 16
+    energyCost: 19
+    rewardCoins: 36
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    materialCost: 10
+    energyCost: 17
+    rewardCoins: 33
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 21
+    energyCost: 17
+    rewardCoins: 39
+  energyCost: 17
+  rewardCoins: 39
+  isSpecialOrder: 1
+  specialStoryId: qiao_maimai
+  specialStorySequence: 2
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 2
+  customerNote: "改成热门甜酷风，最好完全不像原来。"
+  feedbackText: "牛仔包变得很上镜，可它还是能被认出来。我第一次觉得，改造不一定要把以前全部清掉。"
+  momentText: "乔麦麦：粉丝的牛仔包改完啦。最打动我的评论不是“好潮”，是“我还认得它”。"
+  todayStoryText: "第二次来时，她更像一个甲方：要强反差、要上镜、要标题能写。牛仔包被改成醒目的新风格。她起初只看视频效果，后来却在评论区看到粉丝留言“我还认得它”。乔麦麦第一次意识到，改造不一定要让旧物完全消失。"
+  diaryText: "牛仔包改完后颜色跳了很多，拉链上的小星星我没有换。它褪色得厉害，挂在那里却刚好。今天拍照时，我多拍了一张内袋里的祝福卡，虽然它不会出现在正面。"

@@ -14,6 +14,7 @@ namespace APlaceLikeMe.UI
         [SerializeField] private string loadButtonName = "LoadButton";
         [SerializeField] private string settingsButtonName = "SettingsButton";
         [SerializeField] private string exitButtonName = "ExitButton";
+        [SerializeField] private string settingsSceneName = "Setting";
 
         private void Awake()
         {
@@ -42,7 +43,13 @@ namespace APlaceLikeMe.UI
 
         public void OpenSettings()
         {
-            Debug.Log("Settings menu is reserved for future implementation.");
+            if (!Application.CanStreamedLevelBeLoaded(settingsSceneName))
+            {
+                Debug.LogError($"Cannot open settings because scene is not in Build Settings: {settingsSceneName}");
+                return;
+            }
+
+            SceneManager.LoadScene(settingsSceneName);
         }
 
         public void ExitGame()

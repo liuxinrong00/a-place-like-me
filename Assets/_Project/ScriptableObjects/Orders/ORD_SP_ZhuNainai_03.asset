@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_ZhuNainai_03
+  m_EditorClassIdentifier: 
+  id: special_zhu_nainai_03
+  displayName: "特殊订单：站不住的旧相框"
+  itemType: "一个旧木相框，背扣松动，支脚歪斜，木框边角磨白，背板上还贴着旧胶带。"
+  damageLevel: "站不住的旧相框"
+  difficulty: 1
+  customer: {fileID: 11400000, guid: c6ed571b450c53b24eddb692762e6dda, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 1
+    materialCost: 28
+    energyCost: 21
+    rewardCoins: 39
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 16
+    energyCost: 18
+    rewardCoins: 40
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 21
+    energyCost: 20
+    rewardCoins: 38
+  energyCost: 18
+  rewardCoins: 40
+  isSpecialOrder: 1
+  specialStoryId: zhu_nainai
+  specialStorySequence: 3
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 1
+  customerNote: "她说照片总是站不住，能修一下就行，不用弄太新。"
+  feedbackText: "相框终于站得住了，木框上的旧纹路也还在。照片能立起来，我心里也跟着稳了一点。"
+  momentText: "祝奶奶：相框今天站起来了。照片先摆回桌上，其他的事，慢慢来。"
+  todayStoryText: "第三次来时，祝奶奶只带来一个用报纸包着的旧相框。她还是说“你看着修”，但手一直按着相框背面，像怕它又倒下去。旧相框被修好，背扣和支脚重新稳住，木框上的旧木纹、磨白边角和背板胶带仍然留着。取货时，她把照片扶正，看了很久，说：“这个总倒，照片站不住。那就先让它站起来吧。”"
+  diaryText: "旧相框的支脚松得厉害，一碰就倒。我重新固定背扣，旧胶带没有撕掉。照片立起来以后，桌上多出一小片影子，像屋里终于有人坐正了。"

@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_QiaoMaimai_04
+  m_EditorClassIdentifier: 
+  id: special_qiao_maimai_04
+  displayName: "特殊订单：小店网红化方案"
+  itemType: "一份店铺视觉改造方案：霓虹招牌、打卡墙、统一滤镜、热门标语。"
+  damageLevel: "小店网红化方案"
+  difficulty: 1
+  customer: {fileID: 11400000, guid: f3a80f381fbe70d932a8463576f428f1, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 2
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 2
+  - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 1
+    materialCost: 34
+    energyCost: 23
+    rewardCoins: 42
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 2
+    materialCost: 22
+    energyCost: 21
+    rewardCoins: 39
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 1
+    materialCost: 34
+    energyCost: 21
+    rewardCoins: 45
+  energyCost: 21
+  rewardCoins: 45
+  isSpecialOrder: 1
+  specialStoryId: qiao_maimai
+  specialStorySequence: 4
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 2
+  customerNote: "把小店改成更容易爆火的网红店。"
+  feedbackText: "方案被你们修得没那么吵了。爆火当然诱人，但每家店都变成同一种样子，好像也有点可惜。"
+  momentText: "乔麦麦：今天有人说“每家店都越来越像”。我盯着那条评论看了很久。也许抓人不等于把自己磨平。"
+  todayStoryText: "乔麦麦带着方案进店，热情却有点压迫：“你们理念很好，就是不够抓人。”小店短期改出更热门的视觉效果，也引来一批追求爆改的订单。夜晚评论里，有人说好看，也有人说“每家店都越来越像”。乔麦麦看到这条评论后沉默很久。"
+  diaryText: "今天桌上没有旧物，只有一份很亮的改造方案。霓虹字、打卡墙、统一滤镜，每一项都很清楚。我看了很久，忽然发现自己记得这张旧工作台上每一道划痕的位置。"

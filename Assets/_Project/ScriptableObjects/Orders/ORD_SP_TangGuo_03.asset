@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_TangGuo_03
+  m_EditorClassIdentifier: 
+  id: special_tang_guo_03
+  displayName: "特殊订单：分成两半的小房子"
+  itemType: "木制玩具小屋，中间裂成两半，一侧屋顶缺角，门轴松动。"
+  damageLevel: "分成两半的小房子"
+  difficulty: 1
+  customer: {fileID: 11400000, guid: 450a398394204bca6fcf4289fc6f5daa, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+    amount: 2
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 1
+    materialCost: 28
+    energyCost: 21
+    rewardCoins: 39
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 16
+    energyCost: 19
+    rewardCoins: 36
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 01d684ae8750dbee1ae630ce02cc3629, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 21
+    energyCost: 19
+    rewardCoins: 42
+  energyCost: 19
+  rewardCoins: 42
+  isSpecialOrder: 1
+  specialStoryId: tang_guo
+  specialStorySequence: 3
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 2
+  customerNote: "不要粘回原样，要改成两座小房子。"
+  feedbackText: "小房子没有被粘回原样，而是变成两座可以互相看见的房子。这样今天住这边，明天也能过去。"
+  momentText: "唐果：我的小房子现在有两座。中间不是裂开，是一条可以走过去的小路。"
+  todayStoryText: "第三次来店时，她带来一张设计图：左边住妈妈，右边住爸爸。小屋没有回到原状，而是成为新的双屋结构。唐果看着成品问：“那我今天住这边，明天也能过去吗？”"
+  diaryText: "小木屋没有粘回原样，而是变成了两座小房子。门轴修好后，左右两边都能打开。它们中间隔着一点距离，但放在同一块底板上，看久了也不算孤零零。"

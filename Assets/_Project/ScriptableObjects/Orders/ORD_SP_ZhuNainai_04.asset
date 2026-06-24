@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_ZhuNainai_04
+  m_EditorClassIdentifier: 
+  id: special_zhu_nainai_04
+  displayName: "特殊订单：停在下午三点的挂钟"
+  itemType: "老式挂钟，钟摆停住，玻璃蒙尘，指针停在下午三点。"
+  damageLevel: "停在下午三点的挂钟"
+  difficulty: 1
+  customer: {fileID: 11400000, guid: c6ed571b450c53b24eddb692762e6dda, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+    amount: 2
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 3
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 47
+    energyCost: 23
+    rewardCoins: 42
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 35
+    energyCost: 20
+    rewardCoins: 43
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 3
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 47
+    energyCost: 22
+    rewardCoins: 41
+  energyCost: 20
+  rewardCoins: 43
+  isSpecialOrder: 1
+  specialStoryId: zhu_nainai
+  specialStorySequence: 4
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 1
+  customerNote: "她说走不走都行，别太吵就好。"
+  feedbackText: "挂钟能走了，声音不吵，旧钟盘也没被弄得太新。时间继续走，也不是坏事。"
+  momentText: "祝奶奶：钟又走了。下午三点还是会响，不过这次我没有把它停住。"
+  todayStoryText: "第四次来店时，祝奶奶把挂钟抱得很稳，却说得很轻：“不急，什么时候修都成。”挂钟恢复运转，但旧钟盘和停摆留下的痕迹仍被看见。听见第一声钟响时，她坐下喝了很久的水，说：“走就走吧，别催人就行。”"
+  diaryText: "挂钟停在三点，玻璃上有一层灰。我把钟摆调好，声音压得很轻。第一下响起时，店里没人说话，只有指针慢慢离开原来的地方。"

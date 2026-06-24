@@ -240,6 +240,11 @@ namespace APlaceLikeMe.Gameplay
             return queueList.Count > 0 && queueList[0] == npc;
         }
 
+        public bool HasCheckoutReadyCustomer()
+        {
+            return queueList.Count > 0 && queueList[0] != null && queueList[0].IsWaitingForCheckout;
+        }
+
         public Vector2 GetDoorPosition()
         {
             return GetAnchorPosition(outDoor, fallbackOutDoorPosition);

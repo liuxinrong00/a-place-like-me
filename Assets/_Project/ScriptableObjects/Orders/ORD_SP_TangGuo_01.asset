@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_TangGuo_01
+  m_EditorClassIdentifier: 
+  id: special_tang_guo_01
+  displayName: "特殊订单：独眼兔要长翅膀"
+  itemType: "布兔玩偶，掉了一只纽扣眼，耳朵开线，肚子上有旧补丁。"
+  damageLevel: "独眼兔要长翅膀"
+  difficulty: 0
+  customer: {fileID: 11400000, guid: 450a398394204bca6fcf4289fc6f5daa, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+    amount: 2
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 16
+    energyCost: 17
+    rewardCoins: 33
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    materialCost: 10
+    energyCost: 15
+    rewardCoins: 30
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 21
+    energyCost: 15
+    rewardCoins: 36
+  energyCost: 15
+  rewardCoins: 36
+  isSpecialOrder: 1
+  specialStoryId: tang_guo
+  specialStorySequence: 1
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 2
+  customerNote: "不要修回原样，要让兔子长翅膀，变成飞行队长。"
+  feedbackText: "兔子真的变成飞行队长了！它不是坏掉，是被选去飞了。店主哥哥没有让它变成普通兔子。"
+  momentText: "唐果：飞行兔队长今天出发！它少了一只眼睛也没关系，队长看远方不靠眼睛数量。"
+  todayStoryText: "唐果第一次来店时，把布兔郑重放到工作台上，像交出一个受伤队友。布兔变成新的角色形象。交付时，她立刻给兔子起新称号，说：“它不是坏掉，它只是被选去飞了。”"
+  diaryText: "布兔少了一只纽扣眼，肚子上的旧补丁很软。我给它缝上翅膀时，线头总想翘起来。放到架子上以后，它歪着脑袋，好像真的准备听口令。"

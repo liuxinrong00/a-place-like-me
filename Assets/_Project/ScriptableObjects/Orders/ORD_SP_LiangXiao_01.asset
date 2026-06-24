@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_LiangXiao_01
+  m_EditorClassIdentifier: 
+  id: special_liang_xiao_01
+  displayName: "特殊订单：摔凹的保温杯"
+  itemType: "银色保温杯，杯身凹了一块，杯底贴着三层配送站贴纸。"
+  damageLevel: "摔凹的保温杯"
+  difficulty: 0
+  customer: {fileID: 11400000, guid: 5208664e0a8a836e57453003465ad6e6, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 23
+    energyCost: 17
+    rewardCoins: 33
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    materialCost: 17
+    energyCost: 14
+    rewardCoins: 34
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 35
+    energyCost: 16
+    rewardCoins: 32
+  energyCost: 14
+  rewardCoins: 34
+  isSpecialOrder: 1
+  specialStoryId: liang_xiao
+  specialStorySequence: 1
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 1
+  customerNote: "能继续保温就行，杯身凹痕和旧贴纸不要处理。"
+  feedbackText: "杯子保温好了，凹痕和贴纸也还在。老板懂我的意思，没把它修得像别人的新杯子。"
+  momentText: "梁骁：今天那个凹杯子又能装热水了。旧贴纸没撕，凹痕也还在。挺好，有些东西不用装作没摔过。"
+  todayStoryText: "梁骁第一次进店时站在门口很久，像是在判断这里会不会把旧东西修得太体面。他把杯子放到工作台上，只说“别弄太新，能喝热水就行”。杯子恢复使用，但凹痕和贴纸仍清楚可见。交付时，他摸了摸那块凹痕，说那是雨天摔倒时磕的，“那天单子没超时”。"
+  diaryText: "今天修了一只银色保温杯。杯底贴了好几层旧贴纸，边缘卷起来，我没有撕。凹下去的地方洗不平，只能让它重新装住热水。交付后，工作台上还留着一圈很浅的杯印。"

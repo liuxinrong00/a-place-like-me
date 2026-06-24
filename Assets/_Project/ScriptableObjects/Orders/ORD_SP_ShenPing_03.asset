@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_ShenPing_03
+  m_EditorClassIdentifier: 
+  id: special_shen_ping_03
+  displayName: "特殊订单：一盏不能出错的台灯"
+  itemType: "办公室金属台灯，开关松动，灯罩磕碰，电线外皮磨损。"
+  damageLevel: "一盏不能出错的台灯"
+  difficulty: 1
+  customer: {fileID: 11400000, guid: 9d27aff7a9f2f5df9017df9326f40f46, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+    amount: 2
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 35
+    energyCost: 20
+    rewardCoins: 43
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 23
+    energyCost: 19
+    rewardCoins: 36
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 35
+    energyCost: 20
+    rewardCoins: 38
+  energyCost: 20
+  rewardCoins: 43
+  isSpecialOrder: 1
+  specialStoryId: shen_ping
+  specialStorySequence: 3
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 0
+  customerNote: "外观恢复，开关顺滑，电线换到看不出换过。"
+  feedbackText: "台灯外观和开关都恢复得很好，电线也处理得利落。它亮起来的时候，我才发现自己真的很累。"
+  momentText: "沈平：台灯修好了。今晚不打算加太久的班。一个能控制的小角落，也不该只用来硬撑。"
+  todayStoryText: "第三次来店时，沈平带着很厚的黑眼圈，却仍把需求列成三条。台灯在外观和使用状态上都恢复到接近新物。交付后，他没有像前两次那样立刻检查，而是先问店主：“你们每天也会忙到不想说话吗？”"
+  diaryText: "台灯修好后，开关顺了很多。灯亮起来时，金属灯罩映出我的手，指节上有一点胶。那束光只照亮桌面一角，别的地方还是暗的。这样反而让人能坐一会儿。"

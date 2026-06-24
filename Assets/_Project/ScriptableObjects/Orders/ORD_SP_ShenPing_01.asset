@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_ShenPing_01
+  m_EditorClassIdentifier: 
+  id: special_shen_ping_01
+  displayName: "特殊订单：白瓷马克杯不能有裂痕"
+  itemType: "白瓷马克杯，杯柄断裂，杯身有细裂纹，杯底贴着公司周年标。"
+  damageLevel: "白瓷马克杯不能有裂痕"
+  difficulty: 0
+  customer: {fileID: 11400000, guid: 9d27aff7a9f2f5df9017df9326f40f46, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 23
+    energyCost: 16
+    rewardCoins: 37
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    materialCost: 17
+    energyCost: 15
+    rewardCoins: 30
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 35
+    energyCost: 16
+    rewardCoins: 32
+  energyCost: 16
+  rewardCoins: 37
+  isSpecialOrder: 1
+  specialStoryId: shen_ping
+  specialStorySequence: 1
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 0
+  customerNote: "完全看不出修过，不能有胶线和色差。"
+  feedbackText: "杯子修到几乎看不出裂痕，胶线和色差都处理得很好。拿到它的时候，我终于松了一口气。"
+  momentText: "沈平：杯子恢复原状了。好像只要裂痕看不见，那天被当众挑错的感觉也能暂时小一点。"
+  todayStoryText: "沈平第一次来店时先问周期，再问能否开收据，最后才把杯子拿出来。他强调“不是介意旧，只是希望恢复原状”。杯子回到看不出坏过的状态。他给出高评价，但那不是开心，而是松了一口气。"
+  diaryText: "白瓷杯的裂纹很细，要转到光下才看得见。我反复调了颜色，直到胶线藏进杯釉里。擦干杯底的周年标时，我把呼吸放得很轻，怕多留一个指印。"

@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54e23bc11209ecdbaa410ed70bbfc2e, type: 3}
+  m_Name: ORD_SP_QiaoMaimai_03
+  m_EditorClassIdentifier: 
+  id: special_qiao_maimai_03
+  displayName: "特殊订单：外婆织的旧披肩"
+  itemType: "米灰色手织披肩，边缘脱线，针脚不均匀，有几处色差。"
+  damageLevel: "外婆织的旧披肩"
+  difficulty: 1
+  customer: {fileID: 11400000, guid: f3a80f381fbe70d932a8463576f428f1, type: 2}
+  requiredMaterials:
+  - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+    amount: 2
+  - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+    amount: 1
+  - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+    amount: 1
+  repairProfiles:
+  - repairMethodType: 0
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 87e0b7fc253772bb6a75b6a7e5e18d99, type: 2}
+      amount: 1
+    materialCost: 28
+    energyCost: 21
+    rewardCoins: 39
+  - repairMethodType: 1
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 16
+    energyCost: 19
+    rewardCoins: 36
+  - repairMethodType: 2
+    requiredMaterials:
+    - material: {fileID: 11400000, guid: c489be889f3c98581c3309b9ab9e3e6f, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 168bda9764e869eb61e9ae60fb204868, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 708afd02e11d2ca819506934cbfa2283, type: 2}
+      amount: 1
+    materialCost: 21
+    energyCost: 19
+    rewardCoins: 42
+  energyCost: 19
+  rewardCoins: 42
+  isSpecialOrder: 1
+  specialStoryId: qiao_maimai
+  specialStorySequence: 3
+  overridePreferredRepairMethod: 1
+  preferredRepairMethodType: 2
+  customerNote: "改成更适合拍照的年轻款式。"
+  feedbackText: "披肩变年轻了，但针脚和手织的感觉还在。它不是老气，是有人慢慢织出来的。"
+  momentText: "乔麦麦：旧披肩改完后，我一直摸那些不均匀的针脚。以前只想着上镜，现在觉得这些也算设计感。"
+  todayStoryText: "第三次来店时，她难得没有开直播，只拍了几张照片。披肩被改成新的可穿款式，整体风格更适合她现在的生活。取货时，她摸着那些不均匀针脚，说：“这些是不是也能算设计感？”"
+  diaryText: "披肩边缘脱线，针脚有粗有细。我把它改得更轻便，但那些不匀的地方留了下来。手指摸过去，会一下一下停顿，像有人织到一半抬头看过窗外。"
